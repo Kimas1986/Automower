@@ -1,28 +1,72 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { models } from "@/data/models";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 export default function Page() {
   const sortedModels = useMemo(() => {
     return [...models].sort((a, b) => parseArea(a.area) - parseArea(b.area));
   }, []);
 
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
+  const [installSupported, setInstallSupported] = useState(false);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      setInstallSupported(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
+  }, []);
+
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    setInstallSupported(false);
+  }
+
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
       <div className="mx-auto max-w-6xl px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
         <section className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 sm:text-xs">
-            Husqvarna Automower oppslag
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 sm:text-xs">
+                Husqvarna Automower oppslag
+              </p>
 
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl">
-            WiFi, 4G og RS1
-          </h1>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl">
+                WiFi, 4G og RS1
+              </h1>
 
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600 sm:text-base">
-            Enkel forklaring for kundedialog. Laget for rask bruk på mobil.
-          </p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600 sm:text-base">
+                Enkel forklaring for kundedialog. Laget for rask bruk på mobil.
+              </p>
+            </div>
+
+            {installSupported ? (
+              <button
+                onClick={handleInstall}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                Installer app
+              </button>
+            ) : null}
+          </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <MiniExplainCard
