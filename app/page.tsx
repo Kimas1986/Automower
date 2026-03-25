@@ -17,6 +17,8 @@ export default function Page() {
     useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [installDebug, setInstallDebug] = useState("Laster...");
 
   useEffect(() => {
     const ua = window.navigator.userAgent.toLowerCase();
@@ -24,11 +26,27 @@ export default function Page() {
       /iphone|ipad|ipod/.test(ua) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      // @ts-expect-error iOS Safari
+      window.navigator.standalone === true;
+
     setIsIOS(ios);
+    setIsStandalone(standalone);
+
+    if (standalone) {
+      setInstallDebug("Appen er allerede installert.");
+    } else if (ios) {
+      setInstallDebug("iPhone/iPad: manuell install via Del-meny.");
+    } else {
+      setInstallDebug("Venter på install-prompt fra nettleseren...");
+    }
 
     const handler = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
+      setInstallDebug("Install-prompt er klar.");
+      console.log("beforeinstallprompt mottatt");
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -39,14 +57,35 @@ export default function Page() {
   }, []);
 
   async function handleInstall() {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
+    if (isStandalone) {
+      setShowInstallHelp(true);
+      setInstallDebug("Appen er allerede installert.");
       return;
     }
 
-    setShowInstallHelp((prev) => !prev);
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        setInstallDebug(`Install-valg: ${choice.outcome}`);
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error(error);
+        setInstallDebug("Kunne ikke åpne install-prompt.");
+        setShowInstallHelp(true);
+      }
+      return;
+    }
+
+    setShowInstallHelp(true);
+
+    if (isIOS) {
+      setInstallDebug("Ingen install-prompt på iPhone/iPad. Bruk Del-meny.");
+    } else {
+      setInstallDebug(
+        "Ingen install-prompt tilgjengelig. Bruk nettlesermenyen eller sjekk PWA-oppsett."
+      );
+    }
   }
 
   return (
@@ -68,7 +107,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex w-full max-w-sm flex-col gap-2">
               <button
                 onClick={handleInstall}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
@@ -76,19 +115,28 @@ export default function Page() {
                 Installer app
               </button>
 
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-700">
+                {installDebug}
+              </div>
+
               {showInstallHelp ? (
-                <div className="max-w-xs rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
-                  {isIOS ? (
-                    <p>
-                      På iPhone/iPad: trykk <span className="font-semibold">Del</span> i Safari og velg{" "}
-                      <span className="font-semibold">Legg til på Hjem-skjerm</span>.
-                    </p>
+                <div className="rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-700">
+                  {isStandalone ? (
+                    <p>Appen er allerede installert på denne enheten.</p>
+                  ) : isIOS ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold">iPhone / iPad</p>
+                      <p>1. Åpne siden i Safari</p>
+                      <p>2. Trykk Del</p>
+                      <p>3. Velg «Legg til på Hjem-skjerm»</p>
+                    </div>
                   ) : (
-                    <p>
-                      Hvis install-vinduet ikke dukker opp: åpne nettlesermenyen og velg{" "}
-                      <span className="font-semibold">Installer app</span> eller{" "}
-                      <span className="font-semibold">Legg til på startskjerm</span>.
-                    </p>
+                    <div className="space-y-2">
+                      <p className="font-semibold">Android / Chrome / Edge</p>
+                      <p>Hvis popup ikke dukker opp:</p>
+                      <p>1. Åpne nettlesermenyen</p>
+                      <p>2. Velg «Installer app» eller «Legg til på startskjerm»</p>
+                    </div>
                   )}
                 </div>
               ) : null}
