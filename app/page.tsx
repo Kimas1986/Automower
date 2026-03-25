@@ -15,13 +15,20 @@ export default function Page() {
 
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [installSupported, setInstallSupported] = useState(false);
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    const ios =
+      /iphone|ipad|ipod/.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    setIsIOS(ios);
+
     const handler = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setInstallSupported(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -32,11 +39,14 @@ export default function Page() {
   }, []);
 
   async function handleInstall() {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    setInstallSupported(false);
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+      return;
+    }
+
+    setShowInstallHelp((prev) => !prev);
   }
 
   return (
@@ -58,14 +68,31 @@ export default function Page() {
               </p>
             </div>
 
-            {installSupported ? (
+            <div className="flex flex-col gap-2">
               <button
                 onClick={handleInstall}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
                 Installer app
               </button>
-            ) : null}
+
+              {showInstallHelp ? (
+                <div className="max-w-xs rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+                  {isIOS ? (
+                    <p>
+                      På iPhone/iPad: trykk <span className="font-semibold">Del</span> i Safari og velg{" "}
+                      <span className="font-semibold">Legg til på Hjem-skjerm</span>.
+                    </p>
+                  ) : (
+                    <p>
+                      Hvis install-vinduet ikke dukker opp: åpne nettlesermenyen og velg{" "}
+                      <span className="font-semibold">Installer app</span> eller{" "}
+                      <span className="font-semibold">Legg til på startskjerm</span>.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
