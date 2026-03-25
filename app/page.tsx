@@ -18,7 +18,6 @@ export default function Page() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [installDebug, setInstallDebug] = useState("Laster...");
 
   useEffect(() => {
     const ua = window.navigator.userAgent.toLowerCase();
@@ -26,67 +25,74 @@ export default function Page() {
       /iphone|ipad|ipod/.test(ua) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // @ts-expect-error iOS Safari
-      window.navigator.standalone === true;
+    const checkStandalone = () => {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        // @ts-expect-error iOS Safari
+        window.navigator.standalone === true;
+
+      setIsStandalone(standalone);
+      return standalone;
+    };
 
     setIsIOS(ios);
-    setIsStandalone(standalone);
+    checkStandalone();
 
-    if (standalone) {
-      setInstallDebug("Appen er allerede installert.");
-    } else if (ios) {
-      setInstallDebug("iPhone/iPad: manuell install via Del-meny.");
-    } else {
-      setInstallDebug("Venter på install-prompt fra nettleseren...");
+    const media = window.matchMedia("(display-mode: standalone)");
+    const mediaHandler = () => checkStandalone();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", mediaHandler);
+    } else if (typeof media.addListener === "function") {
+      media.addListener(mediaHandler);
     }
 
     const handler = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setInstallDebug("Install-prompt er klar.");
-      console.log("beforeinstallprompt mottatt");
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
+
+      if (typeof media.removeEventListener === "function") {
+        media.removeEventListener("change", mediaHandler);
+      } else if (typeof media.removeListener === "function") {
+        media.removeListener(mediaHandler);
+      }
     };
   }, []);
 
   async function handleInstall() {
-    if (isStandalone) {
-      setShowInstallHelp(true);
-      setInstallDebug("Appen er allerede installert.");
-      return;
-    }
+    if (isStandalone) return;
 
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
-        setInstallDebug(`Install-valg: ${choice.outcome}`);
+
+        if (choice.outcome === "accepted") {
+          setShowInstallHelp(false);
+        }
+
         setDeferredPrompt(null);
-      } catch (error) {
-        console.error(error);
-        setInstallDebug("Kunne ikke åpne install-prompt.");
-        setShowInstallHelp(true);
+      } catch {
+        if (isIOS) {
+          setShowInstallHelp(true);
+        }
       }
       return;
     }
 
-    setShowInstallHelp(true);
-
     if (isIOS) {
-      setInstallDebug("Ingen install-prompt på iPhone/iPad. Bruk Del-meny.");
-    } else {
-      setInstallDebug(
-        "Ingen install-prompt tilgjengelig. Bruk nettlesermenyen eller sjekk PWA-oppsett."
-      );
+      setShowInstallHelp((prev) => !prev);
     }
   }
+
+  const showInstallButton = !isStandalone && (isIOS || !!deferredPrompt);
+  const showIOSHelp = !isStandalone && isIOS && showInstallHelp;
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -107,40 +113,27 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="flex w-full max-w-sm flex-col gap-2">
-              <button
-                onClick={handleInstall}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
-              >
-                Installer app
-              </button>
+            {showInstallButton ? (
+              <div className="flex w-full max-w-sm flex-col gap-2">
+                <button
+                  onClick={handleInstall}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                >
+                  Installer app
+                </button>
 
-              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-700">
-                {installDebug}
-              </div>
-
-              {showInstallHelp ? (
-                <div className="rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-700">
-                  {isStandalone ? (
-                    <p>Appen er allerede installert på denne enheten.</p>
-                  ) : isIOS ? (
+                {showIOSHelp ? (
+                  <div className="rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-700">
                     <div className="space-y-2">
                       <p className="font-semibold">iPhone / iPad</p>
                       <p>1. Åpne siden i Safari</p>
                       <p>2. Trykk Del</p>
                       <p>3. Velg «Legg til på Hjem-skjerm»</p>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="font-semibold">Android / Chrome / Edge</p>
-                      <p>Hvis popup ikke dukker opp:</p>
-                      <p>1. Åpne nettlesermenyen</p>
-                      <p>2. Velg «Installer app» eller «Legg til på startskjerm»</p>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
