@@ -105,6 +105,7 @@ export default function KalkulatorPage() {
 
   const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionsBoxRef = useRef<HTMLDivElement | null>(null);
+  const skipNextAutocompleteRef = useRef(false);
 
   const modelConfig = useMemo(
     () => MODEL_CONFIGS.find((m) => m.name === selectedModel) ?? null,
@@ -132,7 +133,7 @@ export default function KalkulatorPage() {
   const totalHours =
     overriddenHours > 0 ? overriddenHours : baseHours + extraHours;
 
-const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
+  const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
   const laborCost = totalHours * HOURLY_RATE;
   const cableCost = cableMetersNumber * CABLE_PRICE;
 
@@ -176,6 +177,11 @@ const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
 
   useEffect(() => {
     if (isSelectingSuggestion) {
+      return;
+    }
+
+    if (skipNextAutocompleteRef.current) {
+      skipNextAutocompleteRef.current = false;
       return;
     }
 
@@ -254,6 +260,7 @@ const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
         throw new Error(data?.error || "Klarte ikke hente valgt adresse.");
       }
 
+      skipNextAutocompleteRef.current = true;
       setCustomerAddress(data.formattedAddress || suggestion.text);
       setSelectedPlaceId(suggestion.placeId);
       setSuggestions([]);
@@ -372,6 +379,7 @@ const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
                   <input
                     value={customerAddress}
                     onChange={(e) => {
+                      skipNextAutocompleteRef.current = false;
                       setCustomerAddress(e.target.value);
                       setShowSuggestions(true);
                     }}
@@ -636,8 +644,9 @@ const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
                 Regler
               </p>
               <div className="mt-2 space-y-1 text-sm text-neutral-700">
-                <p>Timepris: {formatCurrency(HOURLY_RATE)} / t</p>
+                <p>Oppmøte / grunnpris kjøring: {formatCurrency(BASE_DRIVING_PRICE)}</p>
                 <p>Kjøring: {formatCurrency(KM_RATE)} / km</p>
+                <p>Timepris: {formatCurrency(HOURLY_RATE)} / t</p>
                 <p>Kabel: {formatCurrency(CABLE_PRICE)} / m</p>
                 <p>4G småmodeller: {formatCurrency(FOUR_G_SMALL_PRICE)} + 1 t</p>
                 <p>Plugin 320/430X NERA: {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t</p>
