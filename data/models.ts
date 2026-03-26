@@ -15,7 +15,6 @@ export type Model = {
 
   area: string;
   slope: string;
-
   connectivity: string;
 
   wifiStatus: StatusValue;
@@ -275,7 +274,29 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "135 min",
     powerUsePerMonth: "11 kWh",
-    notes: "Kan brukes med kabel eller trådløst. WiFi i esken, 4G og RS1 som tilbehør.",
+    notes: "Kan brukes med kabel eller trådløst. WiFi i esken, 4G/plugin og RS1 som tilbehør.",
+  },
+
+  {
+    id: "430x-nera",
+    name: "Automower 430X NERA",
+    articleNumber: "970535221",
+    category: "Kabel / trådløs",
+    area: "3 200 m²",
+    slope: "50 %",
+    connectivity: "Bluetooth®, Mobildata, Wi-Fi",
+    wifiStatus: "Standard",
+    fourGStatus: "Tilbehør",
+    rs1Status: "Tilbehør",
+    gpsTheftTracking: "Ja",
+    pinCode: "Ja",
+    alarm: "Ja",
+    maxSlopeBoundary: "25 %",
+    maxActiveTime: "24 t",
+    guideCables: "3",
+    mowingTimePerCharge: "100 min",
+    powerUsePerMonth: "13 kWh",
+    notes: "Kan brukes med kabel eller bygges om. WiFi følger med, plugin/4G og RS1 kjøpes separat ved behov.",
   },
 
   {
