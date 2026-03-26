@@ -47,7 +47,17 @@ const MODEL_CONFIGS: ModelConfig[] = [
 
 type DistanceResult = {
   km: number;
+  minutes: number;
   source: string;
+};
+
+type GoogleRouteResponse = {
+  distanceMeters?: number;
+  distanceKm?: number;
+  durationSeconds?: number;
+  durationMinutes?: number;
+  error?: string;
+  details?: string;
 };
 
 export default function KalkulatorPage() {
@@ -112,14 +122,34 @@ export default function KalkulatorPage() {
     setIsCalculatingDistance(true);
 
     try {
-      const coordsFrom = await geocodeAddress(BASE_ADDRESS);
-      const coordsTo = await geocodeAddress(customerAddress);
+      const response = await fetch("/api/google/route", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          originAddress: BASE_ADDRESS,
+          destinationAddress: customerAddress,
+        }),
+      });
 
-      const km = await routeDistanceKm(coordsFrom, coordsTo);
+      const data = (await response.json()) as GoogleRouteResponse;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Klarte ikke beregne rute.");
+      }
+
+      const km = Number(data.distanceKm ?? 0);
+      const minutes = Number(data.durationMinutes ?? 0);
+
+      if (!Number.isFinite(km) || km <= 0) {
+        throw new Error("Ugyldig avstand fra Google.");
+      }
 
       setDistance({
         km,
-        source: "OpenStreetMap / OSRM",
+        minutes,
+        source: "Google Routes",
       });
     } catch (error) {
       console.error(error);
@@ -194,9 +224,16 @@ export default function KalkulatorPage() {
                 </button>
 
                 {distance ? (
-                  <p className="mt-2 text-sm text-neutral-700">
-                    Avstand: <span className="font-semibold">{distance.km.toFixed(1)} km</span>
-                  </p>
+                  <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                    <p>
+                      Avstand: <span className="font-semibold">{distance.km.toFixed(1)} km</span>
+                    </p>
+                    <p>
+                      Kjøretid:{" "}
+                      <span className="font-semibold">{distance.minutes.toFixed(0)} min</span>
+                    </p>
+                    <p className="text-neutral-500">{distance.source}</p>
+                  </div>
                 ) : null}
 
                 {distanceError ? (
@@ -437,58 +474,4 @@ function formatCurrency(value: number) {
 
 function formatHours(value: number) {
   return value.toString().replace(".", ",");
-}
-
-async function geocodeAddress(address: string): Promise<{ lat: number; lon: number }> {
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(
-    address
-  )}`;
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Geokoding feilet");
-  }
-
-  const data: Array<{ lat: string; lon: string }> = await response.json();
-
-  if (!data.length) {
-    throw new Error("Fant ikke adresse");
-  }
-
-  return {
-    lat: Number(data[0].lat),
-    lon: Number(data[0].lon),
-  };
-}
-
-async function routeDistanceKm(
-  from: { lat: number; lon: number },
-  to: { lat: number; lon: number }
-): Promise<number> {
-  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Ruting feilet");
-  }
-
-  const data: {
-    routes?: Array<{ distance: number }>;
-  } = await response.json();
-
-  if (!data.routes?.length) {
-    throw new Error("Fant ikke kjørerute");
-  }
-
-  return data.routes[0].distance / 1000;
 }
