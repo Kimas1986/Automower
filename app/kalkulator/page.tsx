@@ -6,6 +6,7 @@ const BASE_ADDRESS = "Joakim Brevolds Allé 4, 7170 Åfjord";
 
 const HOURLY_RATE = 1070;
 const KM_RATE = 8.75;
+const BASE_DRIVING_PRICE = 125;
 const CABLE_PRICE = 12;
 
 const FOUR_G_SMALL_PRICE = 2990;
@@ -17,32 +18,33 @@ type ModelConfig = {
   baseHours: number;
   fourGType: "small" | "plugin" | "none" | "built-in";
   rs1Allowed: boolean;
+  cableAllowed: boolean;
 };
 
 const MODEL_CONFIGS: ModelConfig[] = [
-  { name: "Aspire R4", baseHours: 3.5, fourGType: "none", rs1Allowed: false },
-  { name: "305", baseHours: 3.5, fourGType: "small", rs1Allowed: false },
-  { name: "315 Mk II", baseHours: 4, fourGType: "small", rs1Allowed: false },
+  { name: "Aspire R4", baseHours: 3.5, fourGType: "none", rs1Allowed: false, cableAllowed: true },
+  { name: "305", baseHours: 3.5, fourGType: "small", rs1Allowed: false, cableAllowed: true },
+  { name: "315 Mk II", baseHours: 4, fourGType: "small", rs1Allowed: false, cableAllowed: true },
 
-  { name: "Aspire R6V", baseHours: 3, fourGType: "small", rs1Allowed: true },
-  { name: "308V", baseHours: 3, fourGType: "small", rs1Allowed: true },
-  { name: "312V", baseHours: 3, fourGType: "small", rs1Allowed: true },
+  { name: "Aspire R6V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
+  { name: "308V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
+  { name: "312V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
 
-  { name: "305E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true },
-  { name: "310E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true },
-  { name: "320 NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true },
-  { name: "430X NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true },
+  { name: "305E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true, cableAllowed: true },
+  { name: "310E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true, cableAllowed: true },
+  { name: "320 NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
+  { name: "430X NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
 
-  { name: "405VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true },
-  { name: "410VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true },
-  { name: "430V NERA", baseHours: 4, fourGType: "built-in", rs1Allowed: true },
-  { name: "435X AWD NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true },
-  { name: "450V NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true },
+  { name: "405VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "410VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "430V NERA", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "435X AWD NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "450V NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
 
-  { name: "520 EPOS", baseHours: 4, fourGType: "built-in", rs1Allowed: true },
-  { name: "535 AWD EPOS", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true },
-  { name: "560 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true },
-  { name: "580 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true },
+  { name: "520 EPOS", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "535 AWD EPOS", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "560 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "580 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
 ];
 
 type DistanceResult = {
@@ -109,7 +111,11 @@ export default function KalkulatorPage() {
     [selectedModel]
   );
 
-  const cableMetersNumber = Math.max(0, Number(cableMeters.replace(",", ".")) || 0);
+  const cableAllowed = modelConfig?.cableAllowed ?? false;
+  const cableMetersNumber = cableAllowed
+    ? Math.max(0, Number(cableMeters.replace(",", ".")) || 0)
+    : 0;
+
   const overriddenHours = Number(manualHours.replace(",", ".")) || 0;
 
   const fourGAllowed =
@@ -126,7 +132,7 @@ export default function KalkulatorPage() {
   const totalHours =
     overriddenHours > 0 ? overriddenHours : baseHours + extraHours;
 
-  const drivingCost = distance ? distance.km * KM_RATE : 0;
+const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
   const laborCost = totalHours * HOURLY_RATE;
   const cableCost = cableMetersNumber * CABLE_PRICE;
 
@@ -139,8 +145,9 @@ export default function KalkulatorPage() {
 
   const rs1ProductCost = effectiveAddRS1 ? RS1_PRICE : 0;
 
-  const totalPrice =
-    drivingCost + laborCost + cableCost + fourGProductCost + rs1ProductCost;
+  const installationAndDrivingTotal = drivingCost + laborCost;
+  const accessoriesTotal = cableCost + fourGProductCost + rs1ProductCost;
+  const totalPrice = installationAndDrivingTotal + accessoriesTotal;
 
   useEffect(() => {
     return () => {
@@ -218,6 +225,12 @@ export default function KalkulatorPage() {
       }
     }, 250);
   }, [customerAddress, isSelectingSuggestion]);
+
+  useEffect(() => {
+    if (!cableAllowed) {
+      setCableMeters("0");
+    }
+  }, [cableAllowed]);
 
   async function selectSuggestion(suggestion: Suggestion) {
     try {
@@ -304,9 +317,11 @@ export default function KalkulatorPage() {
 
   function resetOptionalChoices(nextModelName: string) {
     const next = MODEL_CONFIGS.find((m) => m.name === nextModelName);
+
     if (!next) {
       setAddFourG(false);
       setAddRS1(false);
+      setCableMeters("0");
       return;
     }
 
@@ -316,6 +331,10 @@ export default function KalkulatorPage() {
 
     if (!next.rs1Allowed) {
       setAddRS1(false);
+    }
+
+    if (!next.cableAllowed) {
+      setCableMeters("0");
     }
   }
 
@@ -453,16 +472,18 @@ export default function KalkulatorPage() {
                 </select>
               </Field>
 
-              <Field label="Kabel (meter)">
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={cableMeters}
-                  onChange={(e) => setCableMeters(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
-                />
-              </Field>
+              {cableAllowed ? (
+                <Field label="Kabel (meter)">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={cableMeters}
+                    onChange={(e) => setCableMeters(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                  />
+                </Field>
+              ) : null}
 
               <Field label="Standard monteringstid">
                 <input
@@ -523,41 +544,84 @@ export default function KalkulatorPage() {
           <div className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-lg font-semibold sm:text-xl">Oppsummering</h2>
 
-            <div className="mt-4 space-y-2 text-sm">
-              <SummaryRow label="Baseadresse" value={BASE_ADDRESS} />
-              <SummaryRow label="Modell" value={selectedModel || "-"} />
-              <SummaryRow
-                label="Avstand"
-                value={distance ? `${distance.km.toFixed(1)} km` : "-"}
-              />
-              <SummaryRow
-                label="Kjøring"
-                value={formatCurrency(drivingCost)}
-              />
-              <SummaryRow
-                label="Arbeidstid"
-                value={totalHours > 0 ? `${formatHours(totalHours)} t` : "-"}
-              />
-              <SummaryRow
-                label="Arbeid"
-                value={formatCurrency(laborCost)}
-              />
-              <SummaryRow
-                label="Kabel"
-                value={`${cableMetersNumber} m`}
-              />
-              <SummaryRow
-                label="Kabelkostnad"
-                value={formatCurrency(cableCost)}
-              />
-              <SummaryRow
-                label="4G / plugin"
-                value={formatCurrency(fourGProductCost)}
-              />
-              <SummaryRow
-                label="RS1"
-                value={formatCurrency(rs1ProductCost)}
-              />
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Montering og kjøring
+              </p>
+
+              <div className="mt-3 space-y-2 text-sm">
+                <SummaryRow label="Baseadresse" value={BASE_ADDRESS} />
+                <SummaryRow label="Modell" value={selectedModel || "-"} />
+                <SummaryRow
+                  label="Avstand"
+                  value={distance ? `${distance.km.toFixed(1)} km` : "-"}
+                />
+                <SummaryRow
+                  label="Arbeidstid"
+                  value={totalHours > 0 ? `${formatHours(totalHours)} t` : "-"}
+                />
+                <SummaryRow
+                  label="Kjøring"
+                  value={formatCurrency(drivingCost)}
+                />
+                <SummaryRow
+                  label="Arbeid"
+                  value={formatCurrency(laborCost)}
+                />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-base font-semibold">Sum montering og kjøring</span>
+                  <span className="text-xl font-bold">
+                    {formatCurrency(installationAndDrivingTotal)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Tilbehør
+              </p>
+
+              <div className="mt-3 space-y-2 text-sm">
+                {cableAllowed ? (
+                  <>
+                    <SummaryRow
+                      label="Kabel"
+                      value={`${cableMetersNumber} m`}
+                    />
+                    <SummaryRow
+                      label="Kabelkostnad"
+                      value={formatCurrency(cableCost)}
+                    />
+                  </>
+                ) : (
+                  <SummaryRow
+                    label="Kabel"
+                    value="Ikke aktuelt"
+                  />
+                )}
+
+                <SummaryRow
+                  label="4G / plugin"
+                  value={formatCurrency(fourGProductCost)}
+                />
+                <SummaryRow
+                  label="RS1"
+                  value={formatCurrency(rs1ProductCost)}
+                />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-base font-semibold">Sum tilbehør</span>
+                  <span className="text-xl font-bold">
+                    {formatCurrency(accessoriesTotal)}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
