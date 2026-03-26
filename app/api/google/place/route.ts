@@ -25,10 +25,7 @@ export async function POST(req: NextRequest) {
     const placeId = String(body?.placeId ?? "").trim();
 
     if (!placeId) {
-      return NextResponse.json(
-        { error: "placeId mangler" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "placeId mangler" }, { status: 400 });
     }
 
     const response = await fetch(

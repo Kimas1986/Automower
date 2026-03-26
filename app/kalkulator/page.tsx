@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const BASE_ADDRESS = "Joakim Brevolds Allé 4, 7170 Åfjord";
 
@@ -60,6 +60,29 @@ type GoogleRouteResponse = {
   details?: string;
 };
 
+type Suggestion = {
+  placeId: string;
+  text: string;
+  mainText: string;
+  secondaryText: string;
+};
+
+type GoogleAutocompleteResponse = {
+  suggestions?: Suggestion[];
+  error?: string;
+  details?: string;
+};
+
+type GooglePlaceResponse = {
+  formattedAddress?: string;
+  location?: {
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+  error?: string;
+  details?: string;
+};
+
 export default function KalkulatorPage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -71,6 +94,15 @@ export default function KalkulatorPage() {
   const [distance, setDistance] = useState<DistanceResult | null>(null);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [distanceError, setDistanceError] = useState("");
+
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = useState("");
+  const [isSelectingSuggestion, setIsSelectingSuggestion] = useState(false);
+
+  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestionsBoxRef = useRef<HTMLDivElement | null>(null);
 
   const modelConfig = useMemo(
     () => MODEL_CONFIGS.find((m) => m.name === selectedModel) ?? null,
@@ -102,13 +134,124 @@ export default function KalkulatorPage() {
     modelConfig?.fourGType === "small" && effectiveAddFourG
       ? FOUR_G_SMALL_PRICE
       : modelConfig?.fourGType === "plugin" && effectiveAddFourG
-      ? FOUR_G_PLUGIN_PRICE
-      : 0;
+        ? FOUR_G_PLUGIN_PRICE
+        : 0;
 
   const rs1ProductCost = effectiveAddRS1 ? RS1_PRICE : 0;
 
   const totalPrice =
     drivingCost + laborCost + cableCost + fourGProductCost + rs1ProductCost;
+
+  useEffect(() => {
+    return () => {
+      if (autocompleteTimeoutRef.current) {
+        clearTimeout(autocompleteTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsBoxRef.current &&
+        !suggestionsBoxRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSelectingSuggestion) {
+      return;
+    }
+
+    setSelectedPlaceId("");
+    setDistance(null);
+    setDistanceError("");
+
+    const query = customerAddress.trim();
+
+    if (autocompleteTimeoutRef.current) {
+      clearTimeout(autocompleteTimeoutRef.current);
+    }
+
+    if (query.length < 3) {
+      setSuggestions([]);
+      setIsLoadingSuggestions(false);
+      return;
+    }
+
+    autocompleteTimeoutRef.current = setTimeout(async () => {
+      try {
+        setIsLoadingSuggestions(true);
+
+        const response = await fetch("/api/google/autocomplete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            input: query,
+          }),
+        });
+
+        const data = (await response.json()) as GoogleAutocompleteResponse;
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Autocomplete feilet.");
+        }
+
+        setSuggestions(data.suggestions ?? []);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error(error);
+        setSuggestions([]);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 250);
+  }, [customerAddress, isSelectingSuggestion]);
+
+  async function selectSuggestion(suggestion: Suggestion) {
+    try {
+      setIsSelectingSuggestion(true);
+      setDistance(null);
+      setDistanceError("");
+
+      const response = await fetch("/api/google/place", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          placeId: suggestion.placeId,
+        }),
+      });
+
+      const data = (await response.json()) as GooglePlaceResponse;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Klarte ikke hente valgt adresse.");
+      }
+
+      setCustomerAddress(data.formattedAddress || suggestion.text);
+      setSelectedPlaceId(suggestion.placeId);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    } catch (error) {
+      console.error(error);
+      setDistanceError("Klarte ikke hente valgt adresse.");
+    } finally {
+      setIsSelectingSuggestion(false);
+    }
+  }
 
   async function calculateDistance() {
     setDistanceError("");
@@ -206,18 +349,57 @@ export default function KalkulatorPage() {
 
             <div className="mt-4 space-y-4">
               <Field label="Kundens adresse">
-                <input
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="Eks. Storgata 1, 7170 Åfjord"
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
-                />
+                <div className="relative" ref={suggestionsBoxRef}>
+                  <input
+                    value={customerAddress}
+                    onChange={(e) => {
+                      setCustomerAddress(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => {
+                      if (suggestions.length > 0) {
+                        setShowSuggestions(true);
+                      }
+                    }}
+                    placeholder="Eks. Storgata 1, 7170 Åfjord"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                    autoComplete="off"
+                  />
+
+                  {showSuggestions && (suggestions.length > 0 || isLoadingSuggestions) ? (
+                    <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg">
+                      {isLoadingSuggestions ? (
+                        <div className="px-4 py-3 text-sm text-neutral-500">
+                          Søker adresser...
+                        </div>
+                      ) : (
+                        suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.placeId}
+                            type="button"
+                            onClick={() => void selectSuggestion(suggestion)}
+                            className="block w-full border-b border-neutral-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-neutral-50"
+                          >
+                            <div className="text-sm font-medium text-neutral-900">
+                              {suggestion.mainText || suggestion.text}
+                            </div>
+                            {suggestion.secondaryText ? (
+                              <div className="mt-1 text-xs text-neutral-500">
+                                {suggestion.secondaryText}
+                              </div>
+                            ) : null}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               </Field>
 
               <div>
                 <button
                   onClick={calculateDistance}
-                  disabled={isCalculatingDistance}
+                  disabled={isCalculatingDistance || !customerAddress.trim()}
                   className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isCalculatingDistance ? "Beregner avstand..." : "Beregn avstand"}
@@ -238,6 +420,16 @@ export default function KalkulatorPage() {
 
                 {distanceError ? (
                   <p className="mt-2 text-sm text-red-600">{distanceError}</p>
+                ) : null}
+
+                {selectedPlaceId ? (
+                  <p className="mt-2 text-xs text-green-700">
+                    Adresse valgt fra Google-forslag.
+                  </p>
+                ) : customerAddress.trim().length >= 3 ? (
+                  <p className="mt-2 text-xs text-neutral-500">
+                    Velg gjerne et forslag for mest presis adresse.
+                  </p>
                 ) : null}
               </div>
 
@@ -304,10 +496,10 @@ export default function KalkulatorPage() {
                     !modelConfig
                       ? "Velg modell først"
                       : fourGBuiltIn
-                      ? "4G er standard på denne modellen"
-                      : fourGAllowed
-                      ? "Legger til produktpris + 1 time jobb"
-                      : "Ikke aktuelt for denne modellen"
+                        ? "4G er standard på denne modellen"
+                        : fourGAllowed
+                          ? "Legger til produktpris + 1 time jobb"
+                          : "Ikke aktuelt for denne modellen"
                   }
                 />
 
@@ -320,8 +512,8 @@ export default function KalkulatorPage() {
                     !modelConfig
                       ? "Velg modell først"
                       : rs1Allowed
-                      ? "Legger til produktpris + 1 time jobb"
-                      : "Ikke aktuelt for denne modellen"
+                        ? "Legger til produktpris + 1 time jobb"
+                        : "Ikke aktuelt for denne modellen"
                   }
                 />
               </div>
