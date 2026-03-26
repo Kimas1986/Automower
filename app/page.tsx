@@ -111,13 +111,22 @@ export default function Page() {
               <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600 sm:text-base">
                 Enkel forklaring for kundedialog. Laget for rask bruk på mobil.
               </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="/kalkulator"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                >
+                  Monteringskalkulator
+                </a>
+              </div>
             </div>
 
             {showInstallButton ? (
               <div className="flex w-full max-w-sm flex-col gap-2">
                 <button
                   onClick={handleInstall}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
                 >
                   Installer app
                 </button>
