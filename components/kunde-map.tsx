@@ -69,6 +69,7 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 
 export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const polygonRef = useRef<any>(null);
   const clickListenerRef = useRef<any>(null);
@@ -106,6 +107,21 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
 
         const center = { lat: latitude, lng: longitude };
 
+        if (clickListenerRef.current) {
+          clickListenerRef.current.remove();
+          clickListenerRef.current = null;
+        }
+
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+
+        if (polygonRef.current) {
+          polygonRef.current.setMap(null);
+          polygonRef.current = null;
+        }
+
         const map = new googleWindow.google.maps.Map(mapRef.current, {
           center,
           zoom: 21,
@@ -114,7 +130,13 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           fullscreenControl: false,
           mapTypeControl: true,
           rotateControl: false,
+          zoomControl: true,
+          clickableIcons: false,
+          gestureHandling: "greedy",
+          disableDoubleClickZoom: false,
         });
+
+        mapInstanceRef.current = map;
 
         markerRef.current = new googleWindow.google.maps.Marker({
           position: center,
@@ -131,6 +153,7 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           fillOpacity: 0.2,
           editable: false,
           draggable: false,
+          clickable: false,
           map,
         });
 
@@ -145,6 +168,12 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
             },
           ]);
         });
+
+        setTimeout(() => {
+          if (!mapInstanceRef.current || !googleWindow.google?.maps) return;
+          googleWindow.google.maps.event.trigger(mapInstanceRef.current, "resize");
+          mapInstanceRef.current.setCenter(center);
+        }, 50);
 
         setLoadState("ready");
       } catch (error) {
@@ -173,6 +202,8 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
         polygonRef.current.setMap(null);
         polygonRef.current = null;
       }
+
+      mapInstanceRef.current = null;
     };
   }, [latitude, longitude]);
 
@@ -214,17 +245,14 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+      <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+        <div ref={mapRef} className="h-[460px] w-full" />
+
         {loadState !== "ready" ? (
-          <div className="flex h-[460px] items-center justify-center px-6 text-sm text-neutral-500">
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-100/80 px-6 text-sm text-neutral-500">
             {loadState === "loading" ? "Laster kart..." : "Gjør klart kart..."}
           </div>
         ) : null}
-
-        <div
-          ref={mapRef}
-          className={loadState === "ready" ? "h-[460px] w-full" : "hidden"}
-        />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -266,8 +294,9 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
-        Klikk rundt plenområdet for å markere hjørnene. Når du har minst 3 punkter,
-        regner systemet automatisk ut arealet.
+        Dra med én finger eller mus for å flytte kartet. Zoom med hjul eller knapper.
+        Klikk deretter rundt plenområdet for å markere hjørnene. Når du har minst 3
+        punkter, regner systemet automatisk ut arealet.
       </div>
     </div>
   );
