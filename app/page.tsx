@@ -148,15 +148,15 @@ export default function Page() {
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <MiniExplainCard
               title="WiFi"
-              text="Klipperen går trådløst med WiFi når WiFi er standard i esken."
+              text="WiFi brukes til app og skytilkobling. Noen modeller trenger fortsatt ekstrautstyr for kabel-fri drift."
             />
             <MiniExplainCard
               title="4G"
-              text="4G vises som standard hvis det følger med, eller som tilbehør hvis det må kjøpes separat."
+              text="4G gir app og skytilkobling via mobilnett. På enkelte modeller kreves Plug-in eller Connect-kort."
             />
             <MiniExplainCard
               title="RS1"
-              text="RS1 er referansestasjon og vises som tilbehør der den kan brukes."
+              text="RS1 er referansestasjon for ekstra stabil kabel-fri drift. Ikke alltid nødvendig ved god skytilkobling."
             />
           </div>
 
@@ -172,23 +172,23 @@ export default function Page() {
               />
               <QuestionCard
                 title="2. Har du WiFi-dekning i hele hagen?"
-                text="Hvis ja, kan WiFi-modellene kjøres trådløst på WiFi."
+                text="God dekning gjør cloud-løsninger mer stabile og kan redusere behovet for ekstrautstyr."
               />
               <QuestionCard
                 title="3. Hvis nei på WiFi-dekning"
-                text="Da må du enten bruke RS1 eller kjøpe til 4G der modellen støtter det."
+                text="Da må du vurdere 4G / Connect eller RS1 avhengig av modell og ønsket løsning."
               />
               <QuestionCard
                 title="4. Hva betyr det i praksis?"
-                text="Med 4G går klipperen på mobilnett og trenger ikke WiFi. RS1 brukes når du vil ha referansestasjon i stedet."
+                text="Noen modeller er kabel som standard og må bygges om for kabel-fri drift. Sjekk alltid modellkortet."
               />
             </div>
 
             <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-3">
               <p className="text-sm text-neutral-700">
-                <span className="font-semibold">RS1:</span> brukes når du ikke har god nok
-                WiFi-dekning, eller når du ikke vil være avhengig av WiFi. RS1 må
-                monteres med ca. 160 graders åpen sikt mot himmelen.
+                <span className="font-semibold">Tips:</span> NERA-modeller kan ofte
+                bygges om til kabel-fri drift, men det kan kreve Plug-in modul,
+                Connect-kort eller RS1 avhengig av modell og dekning.
               </p>
             </div>
           </div>
@@ -281,15 +281,17 @@ function StatusCard({ title, value }: { title: string; value: string }) {
     value === "Standard"
       ? "bg-emerald-100 text-emerald-700"
       : value === "Tilbehør"
-      ? "bg-amber-100 text-amber-700"
-      : "bg-neutral-200 text-neutral-700";
+        ? "bg-amber-100 text-amber-700"
+        : "bg-neutral-200 text-neutral-700";
 
   return (
     <div className="rounded-2xl border border-neutral-200 p-2 text-center sm:p-3">
       <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500 sm:text-xs">
         {title}
       </p>
-      <div className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold sm:px-3 sm:text-xs ${styles}`}>
+      <div
+        className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold sm:px-3 sm:text-xs ${styles}`}
+      >
         {value}
       </div>
     </div>
