@@ -1,6 +1,6 @@
 export type ModelCategory =
   | "Kun kabel"
-  | "Kabel / trådløs"
+  | "Kabel / oppgraderbar"
   | "Trådløs (WiFi)"
   | "Trådløs (4G)"
   | "Pro";
@@ -127,11 +127,11 @@ export const models: Model[] = [
     id: "305e-nera",
     name: "Automower 305E NERA",
     articleNumber: "970819621",
-    category: "Kabel / trådløs",
+    category: "Kabel / oppgraderbar",
     area: "900 m²",
     slope: "30 %",
     connectivity: "Bluetooth®, Wi-Fi",
-    wifiStatus: "Standard",
+    wifiStatus: "Ikke aktuelt",
     fourGStatus: "Tilbehør",
     rs1Status: "Tilbehør",
     gpsTheftTracking: "Nei",
@@ -142,7 +142,7 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "50 min",
     powerUsePerMonth: "7 kWh",
-    notes: "Kan brukes med kabel eller trådløst. WiFi i esken, 4G og RS1 som tilbehør.",
+    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
   },
 
   {
@@ -215,11 +215,11 @@ export const models: Model[] = [
     id: "310e-nera",
     name: "Automower 310E NERA",
     articleNumber: "970819721",
-    category: "Kabel / trådløs",
+    category: "Kabel / oppgraderbar",
     area: "1 500 m²",
     slope: "30 %",
     connectivity: "Bluetooth®, Wi-Fi",
-    wifiStatus: "Standard",
+    wifiStatus: "Ikke aktuelt",
     fourGStatus: "Tilbehør",
     rs1Status: "Tilbehør",
     gpsTheftTracking: "Nei",
@@ -230,7 +230,7 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "50 min",
     powerUsePerMonth: "11 kWh",
-    notes: "Kan brukes med kabel eller trådløst. WiFi i esken, 4G og RS1 som tilbehør.",
+    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
   },
 
   {
@@ -259,11 +259,11 @@ export const models: Model[] = [
     id: "320-nera",
     name: "Automower 320 NERA",
     articleNumber: "970819821",
-    category: "Kabel / trådløs",
+    category: "Kabel / oppgraderbar",
     area: "3 300 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Wi-Fi",
-    wifiStatus: "Standard",
+    wifiStatus: "Ikke aktuelt",
     fourGStatus: "Tilbehør",
     rs1Status: "Tilbehør",
     gpsTheftTracking: "Nei",
@@ -274,18 +274,18 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "135 min",
     powerUsePerMonth: "11 kWh",
-    notes: "Kan brukes med kabel eller trådløst. WiFi i esken, 4G/plugin og RS1 som tilbehør.",
+    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves både Plug-in modul og Connect-kort. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
   },
 
   {
     id: "430x-nera",
     name: "Automower 430X NERA",
     articleNumber: "970535221",
-    category: "Kabel / trådløs",
+    category: "Kabel / oppgraderbar",
     area: "3 200 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Mobildata, Wi-Fi",
-    wifiStatus: "Standard",
+    wifiStatus: "Ikke aktuelt",
     fourGStatus: "Tilbehør",
     rs1Status: "Tilbehør",
     gpsTheftTracking: "Ja",
@@ -296,7 +296,7 @@ export const models: Model[] = [
     guideCables: "3",
     mowingTimePerCharge: "100 min",
     powerUsePerMonth: "13 kWh",
-    notes: "Kan brukes med kabel eller bygges om. WiFi følger med, plugin/4G og RS1 kjøpes separat ved behov.",
+    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves Plug-in modul. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
   },
 
   {
