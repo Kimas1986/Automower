@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
-    google?: typeof google;
+    google?: typeof globalThis.google;
   }
 }
 
@@ -138,8 +138,8 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
             setPoints((prev) => [
               ...prev,
               {
-                lat: event.latLng!.lat(),
-                lng: event.latLng!.lng(),
+                lat: event.latLng.lat(),
+                lng: event.latLng.lng(),
               },
             ]);
           }
@@ -225,10 +225,7 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard
-          label="Punkter"
-          value={String(points.length)}
-        />
+        <StatCard label="Punkter" value={String(points.length)} />
         <StatCard
           label="Areal"
           value={
