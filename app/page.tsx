@@ -119,6 +119,13 @@ export default function Page() {
                 >
                   Monteringskalkulator
                 </a>
+
+                <a
+                  href="/kunde"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
+                >
+                  Finn riktig klipper
+                </a>
               </div>
             </div>
 
