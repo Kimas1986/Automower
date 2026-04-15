@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import KundeMap from "@/components/kunde-map";
 
 type Suggestion = {
   placeId: string;
@@ -173,16 +174,6 @@ export default function KundePage() {
     setErrorMessage("");
   }
 
-  const mapUrl =
-    selectedCoords?.latitude != null && selectedCoords?.longitude != null
-      ? `https://maps.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&t=k&z=21&output=embed`
-      : "";
-
-  const openMapsUrl =
-    selectedCoords?.latitude != null && selectedCoords?.longitude != null
-      ? `https://www.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&t=k&z=21`
-      : "";
-
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -336,39 +327,17 @@ export default function KundePage() {
                     Steg 2
                   </p>
                   <h2 className="mt-1 text-lg font-semibold sm:text-xl">
-                    Kartutsnitt av eiendommen
+                    Tegn inn plenen din
                   </h2>
                   <p className="mt-2 text-sm text-neutral-600">
-                    Neste steg blir å tegne inn plen direkte her.
+                    Klikk rundt plenområdet direkte i kartet. Vi regner arealet automatisk.
                   </p>
 
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
-                    <iframe
-                      title="Kart over valgt adresse"
-                      src={mapUrl}
-                      className="h-[420px] w-full"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
+                  <div className="mt-4">
+                    <KundeMap
+                      latitude={selectedCoords.latitude}
+                      longitude={selectedCoords.longitude}
                     />
-                  </div>
-
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <a
-                      href={openMapsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-6 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
-                    >
-                      Åpne i Google Maps
-                    </a>
-
-                    <button
-                      type="button"
-                      disabled
-                      className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white opacity-50"
-                    >
-                      Tegn plen kommer nå
-                    </button>
                   </div>
                 </div>
               ) : null}
