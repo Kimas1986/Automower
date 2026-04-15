@@ -175,12 +175,12 @@ export default function KundePage() {
 
   const mapUrl =
     selectedCoords?.latitude != null && selectedCoords?.longitude != null
-      ? `https://www.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&z=20&output=embed`
+      ? `https://maps.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&t=k&z=21&output=embed`
       : "";
 
   const openMapsUrl =
     selectedCoords?.latitude != null && selectedCoords?.longitude != null
-      ? `https://www.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&z=20`
+      ? `https://www.google.com/maps?q=${selectedCoords.latitude},${selectedCoords.longitude}&t=k&z=21`
       : "";
 
   return (
