@@ -2,11 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
-declare global {
-  interface Window {
-    google?: typeof globalThis.google;
-  }
-}
+type GoogleMapsWindow = Window & {
+  google?: typeof google;
+};
 
 type KundeMapProps = {
   latitude: number;
@@ -22,7 +20,9 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
     return Promise.reject(new Error("window er ikke tilgjengelig"));
   }
 
-  if (window.google?.maps) {
+  const googleWindow = window as GoogleMapsWindow;
+
+  if (googleWindow.google?.maps) {
     return Promise.resolve();
   }
 
@@ -66,7 +66,6 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -94,13 +93,15 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
 
         await loadGoogleMapsScript(apiKey);
 
-        if (cancelled || !mapRef.current || !window.google?.maps) {
+        const googleWindow = window as GoogleMapsWindow;
+
+        if (cancelled || !mapRef.current || !googleWindow.google?.maps) {
           return;
         }
 
         const center = { lat: latitude, lng: longitude };
 
-        const map = new window.google.maps.Map(mapRef.current, {
+        const map = new googleWindow.google.maps.Map(mapRef.current, {
           center,
           zoom: 21,
           mapTypeId: "satellite",
@@ -110,15 +111,13 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           rotateControl: false,
         });
 
-        mapInstanceRef.current = map;
-
-        markerRef.current = new window.google.maps.Marker({
+        markerRef.current = new googleWindow.google.maps.Marker({
           position: center,
           map,
           title: "Valgt adresse",
         });
 
-        polygonRef.current = new window.google.maps.Polygon({
+        polygonRef.current = new googleWindow.google.maps.Polygon({
           paths: [],
           strokeColor: "#2563eb",
           strokeOpacity: 1,
@@ -172,20 +171,20 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
         polygonRef.current.setMap(null);
         polygonRef.current = null;
       }
-
-      mapInstanceRef.current = null;
     };
   }, [latitude, longitude]);
 
   useEffect(() => {
-    if (!window.google?.maps || !polygonRef.current) return;
+    const googleWindow = window as GoogleMapsWindow;
+
+    if (!googleWindow.google?.maps || !polygonRef.current) return;
 
     polygonRef.current.setPath(points);
 
     if (points.length >= 3) {
       const polygonArea =
-        window.google.maps.geometry.spherical.computeArea(
-          points.map((point) => new window.google.maps.LatLng(point.lat, point.lng))
+        googleWindow.google.maps.geometry.spherical.computeArea(
+          points.map((point) => new googleWindow.google!.maps.LatLng(point.lat, point.lng))
         ) || 0;
 
       setAreaSquareMeters(polygonArea);
