@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type GoogleMapsWindow = Window & {
-  google?: typeof google;
+  google?: any;
 };
 
 type KundeMapProps = {
@@ -12,6 +12,11 @@ type KundeMapProps = {
 };
 
 type LoadState = "idle" | "loading" | "ready" | "error";
+
+type Point = {
+  lat: number;
+  lng: number;
+};
 
 let googleMapsScriptPromise: Promise<void> | null = null;
 
@@ -64,13 +69,13 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 
 export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const markerRef = useRef<any>(null);
+  const polygonRef = useRef<any>(null);
+  const clickListenerRef = useRef<any>(null);
 
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [points, setPoints] = useState<Array<{ lat: number; lng: number }>>([]);
+  const [points, setPoints] = useState<Point[]>([]);
   const [areaSquareMeters, setAreaSquareMeters] = useState(0);
 
   useEffect(() => {
@@ -129,20 +134,17 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           map,
         });
 
-        clickListenerRef.current = map.addListener(
-          "click",
-          (event: google.maps.MapMouseEvent) => {
-            if (!event.latLng) return;
+        clickListenerRef.current = map.addListener("click", (event: any) => {
+          if (!event?.latLng) return;
 
-            setPoints((prev) => [
-              ...prev,
-              {
-                lat: event.latLng.lat(),
-                lng: event.latLng.lng(),
-              },
-            ]);
-          }
-        );
+          setPoints((prev) => [
+            ...prev,
+            {
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng(),
+            },
+          ]);
+        });
 
         setLoadState("ready");
       } catch (error) {
@@ -184,7 +186,9 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
     if (points.length >= 3) {
       const polygonArea =
         googleWindow.google.maps.geometry.spherical.computeArea(
-          points.map((point) => new googleWindow.google!.maps.LatLng(point.lat, point.lng))
+          points.map(
+            (point) => new googleWindow.google.maps.LatLng(point.lat, point.lng)
+          )
         ) || 0;
 
       setAreaSquareMeters(polygonArea);
