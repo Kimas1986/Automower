@@ -79,9 +79,9 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const [areaSquareMeters, setAreaSquareMeters] = useState(0);
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY;
+    const browserApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY;
 
-    if (!apiKey) {
+    if (!browserApiKey) {
       setLoadState("error");
       setErrorMessage(
         "NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY mangler. Legg den inn i miljøvariablene."
@@ -96,7 +96,7 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
         setLoadState("loading");
         setErrorMessage("");
 
-        await loadGoogleMapsScript(apiKey);
+        await loadGoogleMapsScript(browserApiKey);
 
         const googleWindow = window as GoogleMapsWindow;
 
