@@ -79,7 +79,7 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const [areaSquareMeters, setAreaSquareMeters] = useState(0);
 
   useEffect(() => {
-    const browserApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY;
+    const browserApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY ?? "";
 
     if (!browserApiKey) {
       setLoadState("error");
