@@ -22,29 +22,143 @@ type ModelConfig = {
 };
 
 const MODEL_CONFIGS: ModelConfig[] = [
-  { name: "Aspire R4", baseHours: 3.5, fourGType: "none", rs1Allowed: false, cableAllowed: true },
-  { name: "305", baseHours: 3.5, fourGType: "small", rs1Allowed: false, cableAllowed: true },
-  { name: "315 Mk II", baseHours: 4, fourGType: "small", rs1Allowed: false, cableAllowed: true },
+  {
+    name: "Aspire R4",
+    baseHours: 3.5,
+    fourGType: "none",
+    rs1Allowed: false,
+    cableAllowed: true,
+  },
+  {
+    name: "305",
+    baseHours: 3.5,
+    fourGType: "small",
+    rs1Allowed: false,
+    cableAllowed: true,
+  },
+  {
+    name: "315 Mk II",
+    baseHours: 4,
+    fourGType: "small",
+    rs1Allowed: false,
+    cableAllowed: true,
+  },
 
-  { name: "Aspire R6V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
-  { name: "308V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
-  { name: "312V", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: false },
+  {
+    name: "Aspire R6V",
+    baseHours: 3,
+    fourGType: "small",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "308V",
+    baseHours: 3,
+    fourGType: "small",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "312V",
+    baseHours: 3,
+    fourGType: "small",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
 
-  { name: "305E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true, cableAllowed: true },
-  { name: "310E NERA", baseHours: 3.5, fourGType: "small", rs1Allowed: true, cableAllowed: true },
-  { name: "320 NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
-  { name: "430X NERA", baseHours: 4, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
+  {
+    name: "305E NERA",
+    baseHours: 3.5,
+    fourGType: "small",
+    rs1Allowed: true,
+    cableAllowed: true,
+  },
+  {
+    name: "310E NERA",
+    baseHours: 3.5,
+    fourGType: "small",
+    rs1Allowed: true,
+    cableAllowed: true,
+  },
+  {
+    name: "320 NERA",
+    baseHours: 4,
+    fourGType: "plugin",
+    rs1Allowed: true,
+    cableAllowed: true,
+  },
+  {
+    name: "430X NERA",
+    baseHours: 4,
+    fourGType: "plugin",
+    rs1Allowed: true,
+    cableAllowed: true,
+  },
 
-  { name: "405VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "410VE NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "430V NERA", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "435X AWD NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "450V NERA", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  {
+    name: "405VE NERA",
+    baseHours: 3.5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "410VE NERA",
+    baseHours: 3.5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "430V NERA",
+    baseHours: 4,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "435X AWD NERA",
+    baseHours: 4.5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "450V NERA",
+    baseHours: 4.5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
 
-  { name: "520 EPOS", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "535 AWD EPOS", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "560 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
-  { name: "580 EPOS", baseHours: 5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  {
+    name: "520 EPOS",
+    baseHours: 4,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "535 AWD EPOS",
+    baseHours: 4.5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "560 EPOS",
+    baseHours: 5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
+  {
+    name: "580 EPOS",
+    baseHours: 5,
+    fourGType: "built-in",
+    rs1Allowed: true,
+    cableAllowed: false,
+  },
 ];
 
 type DistanceResult = {
@@ -85,6 +199,15 @@ type GooglePlaceResponse = {
   details?: string;
 };
 
+type PrefillState = {
+  areaText: string;
+  boundaryType: string;
+  mowingPattern: string;
+  wifi: string;
+  wants4G: string;
+  complexGarden: string;
+};
+
 export default function KalkulatorPage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -92,6 +215,15 @@ export default function KalkulatorPage() {
   const [addFourG, setAddFourG] = useState(false);
   const [addRS1, setAddRS1] = useState(false);
   const [manualHours, setManualHours] = useState("");
+
+  const [prefill, setPrefill] = useState<PrefillState>({
+    areaText: "",
+    boundaryType: "",
+    mowingPattern: "",
+    wifi: "",
+    wants4G: "",
+    complexGarden: "",
+  });
 
   const [distance, setDistance] = useState<DistanceResult | null>(null);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
@@ -103,9 +235,12 @@ export default function KalkulatorPage() {
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   const [isSelectingSuggestion, setIsSelectingSuggestion] = useState(false);
 
-  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const suggestionsBoxRef = useRef<HTMLDivElement | null>(null);
   const skipNextAutocompleteRef = useRef(false);
+  const hasPrefilledFromQueryRef = useRef(false);
 
   const modelConfig = useMemo(
     () => MODEL_CONFIGS.find((m) => m.name === selectedModel) ?? null,
@@ -173,6 +308,68 @@ export default function KalkulatorPage() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    if (hasPrefilledFromQueryRef.current) {
+      return;
+    }
+
+    hasPrefilledFromQueryRef.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+
+    const address = params.get("address") ?? "";
+    const model = params.get("model") ?? "";
+    const area = params.get("area") ?? "";
+    const boundaryType = params.get("boundaryType") ?? "";
+    const mowingPattern = params.get("mowingPattern") ?? "";
+    const wifi = params.get("wifi") ?? "";
+    const wants4GQuery = params.get("wants4G") ?? "";
+    const complexGarden = params.get("complexGarden") ?? "";
+    const cableMetersQuery = params.get("cableMeters") ?? "";
+
+    if (address) {
+      skipNextAutocompleteRef.current = true;
+      setCustomerAddress(address);
+    }
+
+    if (model && MODEL_CONFIGS.some((item) => item.name === model)) {
+      setSelectedModel(model);
+      resetOptionalChoices(model);
+    }
+
+    if (cableMetersQuery) {
+      setCableMeters(cableMetersQuery);
+    }
+
+    setPrefill({
+      areaText: area,
+      boundaryType,
+      mowingPattern,
+      wifi,
+      wants4G: wants4GQuery,
+      complexGarden,
+    });
+
+    const prefilledModel =
+      model && MODEL_CONFIGS.some((item) => item.name === model)
+        ? MODEL_CONFIGS.find((item) => item.name === model) ?? null
+        : null;
+
+    const prefilledFourGAllowed =
+      prefilledModel?.fourGType === "small" ||
+      prefilledModel?.fourGType === "plugin";
+
+    const prefilledRs1Allowed = prefilledModel?.rs1Allowed ?? false;
+
+    if (wants4GQuery === "yes" && prefilledFourGAllowed) {
+      setAddFourG(true);
+    }
+
+    if (boundaryType === "tradlos" && wifi === "no" && prefilledRs1Allowed) {
+      setAddRS1(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -316,7 +513,9 @@ export default function KalkulatorPage() {
       });
     } catch (error) {
       console.error(error);
-      setDistanceError("Klarte ikke beregne avstand. Sjekk adressen og prøv igjen.");
+      setDistanceError(
+        "Klarte ikke beregne avstand. Sjekk adressen og prøv igjen."
+      );
     } finally {
       setIsCalculatingDistance(false);
     }
@@ -356,15 +555,23 @@ export default function KalkulatorPage() {
             Monteringskalkulator
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600 sm:text-base">
-            Pris inkl. mva basert på modell, adresse, arbeidstid, kabel, 4G og RS1.
+            Pris inkl. mva basert på modell, adresse, arbeidstid, kabel, 4G og
+            RS1.
           </p>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <a
               href="/"
               className="inline-flex h-11 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
             >
               Tilbake til oppslag
+            </a>
+
+            <a
+              href="/kunde"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
+            >
+              Tilbake til kundeveileder
             </a>
           </div>
         </section>
@@ -372,6 +579,78 @@ export default function KalkulatorPage() {
         <section className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-lg font-semibold sm:text-xl">Inndata</h2>
+
+            {prefill.areaText ||
+            prefill.boundaryType ||
+            prefill.mowingPattern ||
+            prefill.wifi ||
+            prefill.wants4G ||
+            prefill.complexGarden ? (
+              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">Hentet fra kundeveilederen</p>
+                <div className="mt-2 space-y-1">
+                  {prefill.areaText ? <p>Areal: {prefill.areaText} m²</p> : null}
+                  {prefill.boundaryType ? (
+                    <p>
+                      Løsning:{" "}
+                      {prefill.boundaryType === "kabel"
+                        ? "Kabel"
+                        : prefill.boundaryType === "tradlos"
+                          ? "Kabel-fri / trådløs"
+                          : prefill.boundaryType}
+                    </p>
+                  ) : null}
+                  {prefill.mowingPattern ? (
+                    <p>
+                      Klippemønster:{" "}
+                      {prefill.mowingPattern === "systematic"
+                        ? "Systematisk"
+                        : prefill.mowingPattern === "irregular"
+                          ? "Uregelmessig"
+                          : prefill.mowingPattern === "unknown"
+                            ? "Vet ikke"
+                            : prefill.mowingPattern}
+                    </p>
+                  ) : null}
+                  {prefill.wifi ? (
+                    <p>
+                      WiFi i hagen:{" "}
+                      {prefill.wifi === "yes"
+                        ? "Ja"
+                        : prefill.wifi === "no"
+                          ? "Nei"
+                          : prefill.wifi === "unknown"
+                            ? "Usikker"
+                            : prefill.wifi}
+                    </p>
+                  ) : null}
+                  {prefill.wants4G ? (
+                    <p>
+                      Ønske om 4G:{" "}
+                      {prefill.wants4G === "yes"
+                        ? "Ja"
+                        : prefill.wants4G === "no"
+                          ? "Nei"
+                          : prefill.wants4G === "unknown"
+                            ? "Usikker"
+                            : prefill.wants4G}
+                    </p>
+                  ) : null}
+                  {prefill.complexGarden ? (
+                    <p>
+                      Komplisert hage:{" "}
+                      {prefill.complexGarden === "yes"
+                        ? "Ja"
+                        : prefill.complexGarden === "no"
+                          ? "Nei"
+                          : prefill.complexGarden === "unknown"
+                            ? "Usikker"
+                            : prefill.complexGarden}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 space-y-4">
               <Field label="Kundens adresse">
@@ -393,7 +672,8 @@ export default function KalkulatorPage() {
                     autoComplete="off"
                   />
 
-                  {showSuggestions && (suggestions.length > 0 || isLoadingSuggestions) ? (
+                  {showSuggestions &&
+                  (suggestions.length > 0 || isLoadingSuggestions) ? (
                     <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg">
                       {isLoadingSuggestions ? (
                         <div className="px-4 py-3 text-sm text-neutral-500">
@@ -429,17 +709,24 @@ export default function KalkulatorPage() {
                   disabled={isCalculatingDistance || !customerAddress.trim()}
                   className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isCalculatingDistance ? "Beregner avstand..." : "Beregn avstand"}
+                  {isCalculatingDistance
+                    ? "Beregner avstand..."
+                    : "Beregn avstand"}
                 </button>
 
                 {distance ? (
                   <div className="mt-2 space-y-1 text-sm text-neutral-700">
                     <p>
-                      Avstand: <span className="font-semibold">{distance.km.toFixed(1)} km</span>
+                      Avstand:{" "}
+                      <span className="font-semibold">
+                        {distance.km.toFixed(1)} km
+                      </span>
                     </p>
                     <p>
                       Kjøretid:{" "}
-                      <span className="font-semibold">{distance.minutes.toFixed(0)} min</span>
+                      <span className="font-semibold">
+                        {distance.minutes.toFixed(0)} min
+                      </span>
                     </p>
                     <p className="text-neutral-500">{distance.source}</p>
                   </div>
@@ -568,19 +855,15 @@ export default function KalkulatorPage() {
                   label="Arbeidstid"
                   value={totalHours > 0 ? `${formatHours(totalHours)} t` : "-"}
                 />
-                <SummaryRow
-                  label="Kjøring"
-                  value={formatCurrency(drivingCost)}
-                />
-                <SummaryRow
-                  label="Arbeid"
-                  value={formatCurrency(laborCost)}
-                />
+                <SummaryRow label="Kjøring" value={formatCurrency(drivingCost)} />
+                <SummaryRow label="Arbeid" value={formatCurrency(laborCost)} />
               </div>
 
               <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-base font-semibold">Sum montering og kjøring</span>
+                  <span className="text-base font-semibold">
+                    Sum montering og kjøring
+                  </span>
                   <span className="text-xl font-bold">
                     {formatCurrency(installationAndDrivingTotal)}
                   </span>
@@ -596,30 +879,21 @@ export default function KalkulatorPage() {
               <div className="mt-3 space-y-2 text-sm">
                 {cableAllowed ? (
                   <>
-                    <SummaryRow
-                      label="Kabel"
-                      value={`${cableMetersNumber} m`}
-                    />
+                    <SummaryRow label="Kabel" value={`${cableMetersNumber} m`} />
                     <SummaryRow
                       label="Kabelkostnad"
                       value={formatCurrency(cableCost)}
                     />
                   </>
                 ) : (
-                  <SummaryRow
-                    label="Kabel"
-                    value="Ikke aktuelt"
-                  />
+                  <SummaryRow label="Kabel" value="Ikke aktuelt" />
                 )}
 
                 <SummaryRow
                   label="4G / plugin"
                   value={formatCurrency(fourGProductCost)}
                 />
-                <SummaryRow
-                  label="RS1"
-                  value={formatCurrency(rs1ProductCost)}
-                />
+                <SummaryRow label="RS1" value={formatCurrency(rs1ProductCost)} />
               </div>
 
               <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
@@ -635,7 +909,9 @@ export default function KalkulatorPage() {
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-base font-semibold">Total inkl. mva</span>
-                <span className="text-xl font-bold">{formatCurrency(totalPrice)}</span>
+                <span className="text-xl font-bold">
+                  {formatCurrency(totalPrice)}
+                </span>
               </div>
             </div>
 
@@ -644,12 +920,18 @@ export default function KalkulatorPage() {
                 Regler
               </p>
               <div className="mt-2 space-y-1 text-sm text-neutral-700">
-                <p>Oppmøte / grunnpris kjøring: {formatCurrency(BASE_DRIVING_PRICE)}</p>
+                <p>
+                  Oppmøte / grunnpris kjøring: {formatCurrency(BASE_DRIVING_PRICE)}
+                </p>
                 <p>Kjøring: {formatCurrency(KM_RATE)} / km</p>
                 <p>Timepris: {formatCurrency(HOURLY_RATE)} / t</p>
                 <p>Kabel: {formatCurrency(CABLE_PRICE)} / m</p>
-                <p>4G småmodeller: {formatCurrency(FOUR_G_SMALL_PRICE)} + 1 t</p>
-                <p>Plugin 320/430X NERA: {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t</p>
+                <p>
+                  4G småmodeller: {formatCurrency(FOUR_G_SMALL_PRICE)} + 1 t
+                </p>
+                <p>
+                  Plugin 320/430X NERA: {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t
+                </p>
                 <p>RS1: {formatCurrency(RS1_PRICE)} + 1 t</p>
               </div>
             </div>
@@ -669,7 +951,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-neutral-700">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-neutral-700">
+        {label}
+      </span>
       {children}
     </label>
   );

@@ -50,6 +50,8 @@ type SlopeBoundaryOption =
   | "20-25"
   | "unknown";
 
+type MowingPatternOption = "systematic" | "irregular" | "unknown";
+
 const WEEK_DAYS = [
   { key: "mon", label: "Man" },
   { key: "tue", label: "Tir" },
@@ -78,7 +80,10 @@ function parsePercent(value: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-function getAvailabilityFactor(dailyHours: DailyHoursOption, selectedDays: number) {
+function getAvailabilityFactor(
+  dailyHours: DailyHoursOption,
+  selectedDays: number
+) {
   const hoursPerDayFactor =
     dailyHours === "under-6"
       ? 0.35
@@ -121,7 +126,71 @@ function isWirelessCompatible(model: Model) {
 }
 
 function isCableCompatible(model: Model) {
-  return model.category === "Kun kabel" || model.category === "Kabel / oppgraderbar";
+  return (
+    model.category === "Kun kabel" || model.category === "Kabel / oppgraderbar"
+  );
+}
+
+function getEffectiveMowingPattern(
+  mowingPattern: MowingPatternOption
+): "systematic" | "irregular" {
+  return mowingPattern === "systematic" ? "systematic" : "irregular";
+}
+
+function getModelAreaForPattern(
+  model: Model,
+  mowingPattern: MowingPatternOption
+): number {
+  const effectivePattern = getEffectiveMowingPattern(mowingPattern);
+
+  if (effectivePattern === "systematic" && model.areaSystematic) {
+    return parseArea(model.areaSystematic);
+  }
+
+  if (effectivePattern === "irregular" && model.areaIrregular) {
+    return parseArea(model.areaIrregular);
+  }
+
+  return parseArea(model.area);
+}
+
+function getModelAreaLabelForPattern(
+  model: Model,
+  mowingPattern: MowingPatternOption
+): string {
+  const effectivePattern = getEffectiveMowingPattern(mowingPattern);
+
+  if (model.areaIrregular && model.areaSystematic) {
+    if (effectivePattern === "systematic") {
+      return `${model.areaSystematic} (systematisk)`;
+    }
+
+    return `${model.areaIrregular} (uregelmessig)`;
+  }
+
+  if (effectivePattern === "systematic" && model.areaSystematic) {
+    return `${model.areaSystematic} (systematisk)`;
+  }
+
+  if (effectivePattern === "irregular" && model.areaIrregular) {
+    return `${model.areaIrregular} (uregelmessig)`;
+  }
+
+  return model.area;
+}
+
+function getModelAreaDetails(model: Model) {
+  if (model.areaIrregular && model.areaSystematic) {
+    return `Uregelmessig: ${model.areaIrregular} • Systematisk: ${model.areaSystematic}`;
+  }
+
+  return null;
+}
+
+function getPatternLabel(mowingPattern: MowingPatternOption) {
+  if (mowingPattern === "systematic") return "systematisk";
+  if (mowingPattern === "irregular") return "uregelmessig";
+  return "uregelmessig";
 }
 
 function recommendModels(input: {
@@ -134,6 +203,7 @@ function recommendModels(input: {
   fullWifiCoverage: "yes" | "no" | "unknown" | "";
   wants4G: "yes" | "no" | "unknown" | "";
   complexGarden: "yes" | "no" | "unknown" | "";
+  mowingPattern: MowingPatternOption;
 }): {
   recommended: RecommendedModel | null;
   saferAlternative: RecommendedModel | null;
@@ -155,7 +225,10 @@ function recommendModels(input: {
   if (input.slopeBoundary === "unknown") complexityFactor += 0.05;
   if (input.fullWifiCoverage === "unknown") complexityFactor += 0.03;
   if (input.wants4G === "unknown") complexityFactor += 0.02;
-  if (input.boundaryType === "tradlos" && input.fullWifiCoverage === "no") complexityFactor += 0.08;
+  if (input.mowingPattern === "unknown") complexityFactor += 0.08;
+  if (input.boundaryType === "tradlos" && input.fullWifiCoverage === "no") {
+    complexityFactor += 0.08;
+  }
 
   const neededCapacity = Math.round(
     input.areaSquareMeters * availabilityPenalty * complexityFactor
@@ -167,16 +240,30 @@ function recommendModels(input: {
   const warnings: string[] = [];
 
   if (input.slopeArea === "unknown" || input.slopeBoundary === "unknown") {
-    warnings.push("Du har ikke oppgitt all helling. Vi viser derfor litt tryggere forslag.");
+    warnings.push(
+      "Du har ikke oppgitt all helling. Vi viser derfor litt tryggere forslag."
+    );
   }
 
-  if (input.boundaryType === "tradlos" && input.fullWifiCoverage === "no" && input.wants4G !== "yes") {
-    warnings.push("Du ønsker kabel-fri drift uten god WiFi. 4G eller annen stabil tilkobling bør vurderes.");
+  if (input.mowingPattern === "unknown") {
+    warnings.push(
+      "Du valgte «vet ikke» på klippemønster. Vi har derfor regnet konservativt og lagt til grunn uregelmessig klippemønster."
+    );
+  }
+
+  if (
+    input.boundaryType === "tradlos" &&
+    input.fullWifiCoverage === "no" &&
+    input.wants4G !== "yes"
+  ) {
+    warnings.push(
+      "Du ønsker kabel-fri drift uten god WiFi. 4G eller annen stabil tilkobling bør vurderes."
+    );
   }
 
   const filtered = models
     .filter((model) => {
-      const modelArea = parseArea(model.area);
+      const modelArea = getModelAreaForPattern(model, input.mowingPattern);
       const modelSlope = parsePercent(model.slope);
       const modelBoundarySlope = parsePercent(model.maxSlopeBoundary);
 
@@ -184,8 +271,13 @@ function recommendModels(input: {
       if (modelSlope < neededSlope) return false;
       if (modelBoundarySlope < neededBoundarySlope) return false;
 
-      if (input.boundaryType === "kabel" && !isCableCompatible(model)) return false;
-      if (input.boundaryType === "tradlos" && !isWirelessCompatible(model)) return false;
+      if (input.boundaryType === "kabel" && !isCableCompatible(model)) {
+        return false;
+      }
+
+      if (input.boundaryType === "tradlos" && !isWirelessCompatible(model)) {
+        return false;
+      }
 
       if (input.boundaryType === "tradlos" && input.wants4G === "yes") {
         if (
@@ -205,12 +297,17 @@ function recommendModels(input: {
           model.wifiStatus === "Standard" ||
           model.category === "Kabel / oppgraderbar" ||
           model.category === "Pro";
+
         if (!canUseWifi) return false;
       }
 
       return true;
     })
-    .sort((a, b) => parseArea(a.area) - parseArea(b.area));
+    .sort(
+      (a, b) =>
+        getModelAreaForPattern(a, input.mowingPattern) -
+        getModelAreaForPattern(b, input.mowingPattern)
+    );
 
   if (filtered.length === 0) {
     return {
@@ -222,26 +319,44 @@ function recommendModels(input: {
   }
 
   const recommendedModel = filtered[0];
+  const recommendedCapacity = getModelAreaForPattern(
+    recommendedModel,
+    input.mowingPattern
+  );
+
   const saferAlternativeModel =
-    filtered.find((model) => parseArea(model.area) > parseArea(recommendedModel.area)) ??
+    filtered.find(
+      (model) =>
+        getModelAreaForPattern(model, input.mowingPattern) > recommendedCapacity
+    ) ??
     filtered[Math.min(1, filtered.length - 1)] ??
     null;
 
   function buildReason(model: Model, variant: "recommended" | "safer"): string {
     const parts: string[] = [];
+    const effectivePattern = getPatternLabel(input.mowingPattern);
 
     if (variant === "recommended") {
-      parts.push("Passer best ut fra areal, driftstid og valgt løsning.");
+      parts.push(
+        `Passer best ut fra areal, driftstid, valgt løsning og ${effectivePattern} klippemønster.`
+      );
     } else {
-      parts.push("Gir litt mer kapasitet og margin hvis forholdene blir tøffere enn antatt.");
+      parts.push(
+        "Gir litt mer kapasitet og margin hvis forholdene blir tøffere enn antatt."
+      );
     }
 
-    if (input.boundaryType === "tradlos") {
-      if (model.category === "Kabel / oppgraderbar") {
-        parts.push("Kan brukes kabel-fritt, men krever ekstrautstyr.");
-      } else if (model.category === "Trådløs (4G)" || model.category === "Trådløs (WiFi)") {
-        parts.push("Er godt egnet for kabel-fri drift.");
-      }
+    if (
+      input.boundaryType === "tradlos" &&
+      model.category === "Kabel / oppgraderbar"
+    ) {
+      parts.push("Kan brukes kabel-fritt, men krever ekstrautstyr.");
+    } else if (
+      input.boundaryType === "tradlos" &&
+      (model.category === "Trådløs (4G)" ||
+        model.category === "Trådløs (WiFi)")
+    ) {
+      parts.push("Er godt egnet for kabel-fri drift.");
     }
 
     if (input.wants4G === "yes" && model.fourGStatus === "Standard") {
@@ -252,6 +367,15 @@ function recommendModels(input: {
 
     if (input.complexGarden === "yes") {
       parts.push("Er vurdert opp mot litt mer krevende hage.");
+    }
+
+    if (model.areaIrregular && model.areaSystematic) {
+      parts.push(
+        `Denne modellen vurderes til ${getModelAreaLabelForPattern(
+          model,
+          input.mowingPattern
+        )}.`
+      );
     }
 
     return parts.join(" ");
@@ -290,18 +414,29 @@ export default function KundePage() {
   const [dailyHours, setDailyHours] = useState<DailyHoursOption | "">("");
   const [selectedDays, setSelectedDays] = useState<WeekDayKey[]>([]);
   const [boundaryType, setBoundaryType] = useState<BoundaryTypeOption>("");
+  const [mowingPattern, setMowingPattern] = useState<MowingPatternOption | "">(
+    ""
+  );
   const [slopeArea, setSlopeArea] = useState<SlopeAreaOption | "">("");
-  const [slopeBoundary, setSlopeBoundary] = useState<SlopeBoundaryOption | "">("");
-  const [fullWifiCoverage, setFullWifiCoverage] = useState<"yes" | "no" | "unknown" | "">("");
+  const [slopeBoundary, setSlopeBoundary] = useState<SlopeBoundaryOption | "">(
+    ""
+  );
+  const [fullWifiCoverage, setFullWifiCoverage] = useState<
+    "yes" | "no" | "unknown" | ""
+  >("");
   const [wants4G, setWants4G] = useState<"yes" | "no" | "unknown" | "">("");
-  const [complexGarden, setComplexGarden] = useState<"yes" | "no" | "unknown" | "">("");
+  const [complexGarden, setComplexGarden] = useState<
+    "yes" | "no" | "unknown" | ""
+  >("");
 
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const suggestionsBoxRef = useRef<HTMLDivElement | null>(null);
   const skipNextAutocompleteRef = useRef(false);
 
@@ -438,6 +573,7 @@ export default function KundePage() {
     setDailyHours("");
     setSelectedDays([]);
     setBoundaryType("");
+    setMowingPattern("");
     setSlopeArea("");
     setSlopeBoundary("");
     setFullWifiCoverage("");
@@ -454,14 +590,14 @@ export default function KundePage() {
     );
   }
 
-  const hasValidLawnDrawing =
-    drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
+  const hasValidLawnDrawing = drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
 
   const canShowRecommendations =
     hasValidLawnDrawing &&
     dailyHours !== "" &&
     selectedDays.length > 0 &&
     boundaryType !== "" &&
+    mowingPattern !== "" &&
     slopeArea !== "" &&
     slopeBoundary !== "";
 
@@ -475,6 +611,7 @@ export default function KundePage() {
       dailyHours: dailyHours as DailyHoursOption,
       selectedDaysCount: selectedDays.length,
       boundaryType,
+      mowingPattern: mowingPattern as MowingPatternOption,
       slopeArea: slopeArea as SlopeAreaOption,
       slopeBoundary: slopeBoundary as SlopeBoundaryOption,
       fullWifiCoverage,
@@ -487,6 +624,7 @@ export default function KundePage() {
     dailyHours,
     selectedDays.length,
     boundaryType,
+    mowingPattern,
     slopeArea,
     slopeBoundary,
     fullWifiCoverage,
@@ -623,7 +761,9 @@ export default function KundePage() {
                     <p className="text-sm font-semibold text-green-800">
                       Valgt adresse
                     </p>
-                    <p className="mt-1 text-sm text-green-700">{selectedAddress}</p>
+                    <p className="mt-1 text-sm text-green-700">
+                      {selectedAddress}
+                    </p>
                     {selectedCoords?.latitude != null &&
                     selectedCoords?.longitude != null ? (
                       <p className="mt-2 text-xs text-green-700">
@@ -641,7 +781,8 @@ export default function KundePage() {
                 )}
               </div>
 
-              {selectedCoords?.latitude != null && selectedCoords?.longitude != null ? (
+              {selectedCoords?.latitude != null &&
+              selectedCoords?.longitude != null ? (
                 <div className="rounded-2xl border border-neutral-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Steg 2
@@ -650,7 +791,8 @@ export default function KundePage() {
                     Tegn inn plenen din
                   </h2>
                   <p className="mt-2 text-sm text-neutral-600">
-                    Klikk rundt plenområdet direkte i kartet. Vi regner arealet automatisk.
+                    Klikk rundt plenområdet direkte i kartet. Vi regner arealet
+                    automatisk.
                   </p>
 
                   <div className="mt-4">
@@ -684,7 +826,8 @@ export default function KundePage() {
                       </p>
                     ) : (
                       <p className="mt-2 text-sm text-neutral-600">
-                        Arealet er klart. Neste steg blir spørsmål om bruksmønster og ønsket løsning.
+                        Arealet er klart. Neste steg blir spørsmål om bruksmønster
+                        og ønsket løsning.
                       </p>
                     )}
                   </div>
@@ -700,15 +843,17 @@ export default function KundePage() {
                     Fortell litt om hagen og bruken
                   </h2>
                   <p className="mt-2 text-sm text-neutral-600">
-                    Dette hjelper oss å foreslå riktige modeller. Hvis du er usikker på helling,
-                    kan du fortsatt velge ukjent og få forslag.
+                    Dette hjelper oss å foreslå riktige modeller. Hvis du er usikker
+                    på helling, kan du fortsatt velge ukjent og få forslag.
                   </p>
 
                   <div className="mt-4 space-y-5">
                     <Field label="Hvor mange timer per døgn kan klipperen gå?">
                       <select
                         value={dailyHours}
-                        onChange={(e) => setDailyHours(e.target.value as DailyHoursOption | "")}
+                        onChange={(e) =>
+                          setDailyHours(e.target.value as DailyHoursOption | "")
+                        }
                         className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
                       >
                         <option value="">Velg</option>
@@ -749,7 +894,9 @@ export default function KundePage() {
                     <Field label="Ønsker du kabel eller kabel-fri løsning?">
                       <select
                         value={boundaryType}
-                        onChange={(e) => setBoundaryType(e.target.value as BoundaryTypeOption)}
+                        onChange={(e) =>
+                          setBoundaryType(e.target.value as BoundaryTypeOption)
+                        }
                         className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
                       >
                         <option value="">Velg</option>
@@ -758,10 +905,29 @@ export default function KundePage() {
                       </select>
                     </Field>
 
+                    <Field label="Ønsker du systematisk eller uregelmessig klippemønster?">
+                      <select
+                        value={mowingPattern}
+                        onChange={(e) =>
+                          setMowingPattern(
+                            e.target.value as MowingPatternOption | ""
+                          )
+                        }
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="systematic">Systematisk</option>
+                        <option value="irregular">Uregelmessig</option>
+                        <option value="unknown">Vet ikke</option>
+                      </select>
+                    </Field>
+
                     <Field label="Bratteste punkt i klippeområdet">
                       <select
                         value={slopeArea}
-                        onChange={(e) => setSlopeArea(e.target.value as SlopeAreaOption | "")}
+                        onChange={(e) =>
+                          setSlopeArea(e.target.value as SlopeAreaOption | "")
+                        }
                         className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
                       >
                         <option value="">Velg</option>
@@ -777,7 +943,9 @@ export default function KundePage() {
                       <select
                         value={slopeBoundary}
                         onChange={(e) =>
-                          setSlopeBoundary(e.target.value as SlopeBoundaryOption | "")
+                          setSlopeBoundary(
+                            e.target.value as SlopeBoundaryOption | ""
+                          )
                         }
                         className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
                       >
@@ -791,9 +959,9 @@ export default function KundePage() {
                     </Field>
 
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
-                      Hvis du er usikker på helling, kan du måle med mobilen ved å bruke en
-                      helningsapp / vater-app. Du kan også velge “vet ikke”, så får du
-                      fortsatt forslag.
+                      Hvis du er usikker på helling, kan du måle med mobilen ved å
+                      bruke en helningsapp / vater-app. Du kan også velge “vet ikke”,
+                      så får du fortsatt forslag.
                     </div>
 
                     <Field label="Har du god WiFi-dekning i hele hagen?">
@@ -817,7 +985,9 @@ export default function KundePage() {
                       <select
                         value={wants4G}
                         onChange={(e) =>
-                          setWants4G(e.target.value as "yes" | "no" | "unknown" | "")
+                          setWants4G(
+                            e.target.value as "yes" | "no" | "unknown" | ""
+                          )
                         }
                         className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
                       >
@@ -859,7 +1029,10 @@ export default function KundePage() {
                   <p className="mt-2 text-sm text-neutral-600">
                     Vi har regnet et behov på omtrent{" "}
                     <span className="font-semibold">
-                      {new Intl.NumberFormat("nb-NO").format(recommendationResult.neededCapacity)} m²
+                      {new Intl.NumberFormat("nb-NO").format(
+                        recommendationResult.neededCapacity
+                      )}{" "}
+                      m²
                     </span>{" "}
                     ut fra areal, driftstid og forholdene du har valgt.
                   </p>
@@ -881,6 +1054,7 @@ export default function KundePage() {
                         model={recommendationResult.recommended.model}
                         reason={recommendationResult.recommended.reason}
                         featured
+                        mowingPattern={mowingPattern as MowingPatternOption}
                       />
                     ) : null}
 
@@ -889,14 +1063,16 @@ export default function KundePage() {
                         title="Tryggere alternativ"
                         model={recommendationResult.saferAlternative.model}
                         reason={recommendationResult.saferAlternative.reason}
+                        mowingPattern={mowingPattern as MowingPatternOption}
                       />
                     ) : null}
                   </div>
 
                   {!recommendationResult.recommended ? (
                     <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                      Vi fant ingen tydelig match med valgene du har gjort. Prøv å åpne for flere
-                      driftstimer, flere dager eller velg en annen løsning.
+                      Vi fant ingen tydelig match med valgene du har gjort. Prøv å
+                      åpne for flere driftstimer, flere dager eller velg en annen
+                      løsning.
                     </div>
                   ) : null}
                 </div>
@@ -945,7 +1121,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-neutral-700">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-neutral-700">
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -956,12 +1134,16 @@ function RecommendationCard({
   model,
   reason,
   featured = false,
+  mowingPattern,
 }: {
   title: string;
   model: Model;
   reason: string;
   featured?: boolean;
+  mowingPattern: MowingPatternOption;
 }) {
+  const areaDetails = getModelAreaDetails(model);
+
   return (
     <div
       className={`rounded-2xl border p-4 ${
@@ -979,22 +1161,53 @@ function RecommendationCard({
       </p>
 
       <h3 className="mt-2 text-xl font-bold">{model.name}</h3>
-      <p className={`mt-1 text-sm ${featured ? "text-neutral-300" : "text-neutral-600"}`}>
+      <p
+        className={`mt-1 text-sm ${
+          featured ? "text-neutral-300" : "text-neutral-600"
+        }`}
+      >
         Art.nr: {model.articleNumber}
       </p>
 
       <div className="mt-4 space-y-2 text-sm">
-        <RecommendationRow label="Område" value={model.area} featured={featured} />
-        <RecommendationRow label="Kategori" value={model.category} featured={featured} />
-        <RecommendationRow label="Helling" value={model.slope} featured={featured} />
+        <RecommendationRow
+          label="Område"
+          value={getModelAreaLabelForPattern(model, mowingPattern)}
+          featured={featured}
+        />
+        <RecommendationRow
+          label="Kategori"
+          value={model.category}
+          featured={featured}
+        />
+        <RecommendationRow
+          label="Helling"
+          value={model.slope}
+          featured={featured}
+        />
         <RecommendationRow
           label="Grense / ytterkant"
           value={model.maxSlopeBoundary}
           featured={featured}
         />
         <RecommendationRow label="4G" value={model.fourGStatus} featured={featured} />
-        <RecommendationRow label="WiFi" value={model.wifiStatus} featured={featured} />
+        <RecommendationRow
+          label="WiFi"
+          value={model.wifiStatus}
+          featured={featured}
+        />
       </div>
+
+      {areaDetails ? (
+        <div
+          className={`mt-4 rounded-2xl p-4 text-sm ${
+            featured ? "bg-white/10 text-neutral-100" : "bg-white text-neutral-700"
+          }`}
+        >
+          <p className="font-semibold">Kapasitet</p>
+          <p className="mt-1">{areaDetails}</p>
+        </div>
+      ) : null}
 
       <div
         className={`mt-4 rounded-2xl p-4 text-sm ${
@@ -1032,7 +1245,9 @@ function RecommendationRow({
         featured ? "bg-white/10" : "border border-neutral-200 bg-white"
       }`}
     >
-      <span className={featured ? "text-neutral-300" : "text-neutral-500"}>{label}</span>
+      <span className={featured ? "text-neutral-300" : "text-neutral-500"}>
+        {label}
+      </span>
       <span className="max-w-[55%] text-right font-medium">{value}</span>
     </div>
   );

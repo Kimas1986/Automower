@@ -14,6 +14,8 @@ export type Model = {
   category: ModelCategory;
 
   area: string;
+  areaIrregular?: string;
+  areaSystematic?: string;
   slope: string;
   connectivity: string;
 
@@ -76,7 +78,8 @@ export const models: Model[] = [
     guideCables: "1",
     mowingTimePerCharge: "60 min",
     powerUsePerMonth: "5 kWh",
-    notes: "Kabelklipper. 4G kan legges til for app/GPS, men klipper fortsatt med kabel.",
+    notes:
+      "Kabelklipper. 4G kan legges til for app/GPS, men klipper fortsatt med kabel.",
   },
 
   {
@@ -142,7 +145,8 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "50 min",
     powerUsePerMonth: "7 kWh",
-    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
+    notes:
+      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
   },
 
   {
@@ -208,7 +212,8 @@ export const models: Model[] = [
     guideCables: "1",
     mowingTimePerCharge: "60 min",
     powerUsePerMonth: "10 kWh",
-    notes: "Kabelklipper. 4G kan legges til for app/GPS, men klipper fortsatt med kabel.",
+    notes:
+      "Kabelklipper. 4G kan legges til for app/GPS, men klipper fortsatt med kabel.",
   },
 
   {
@@ -230,7 +235,8 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "50 min",
     powerUsePerMonth: "11 kWh",
-    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
+    notes:
+      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. 4G kan legges til som tilbehør ved behov.",
   },
 
   {
@@ -274,7 +280,8 @@ export const models: Model[] = [
     guideCables: "2",
     mowingTimePerCharge: "135 min",
     powerUsePerMonth: "11 kWh",
-    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves både Plug-in modul og Connect-kort. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
+    notes:
+      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves både Plug-in modul og Connect-kort. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
   },
 
   {
@@ -283,6 +290,8 @@ export const models: Model[] = [
     articleNumber: "970535221",
     category: "Kabel / oppgraderbar",
     area: "3 200 m²",
+    areaIrregular: "3 200 m²",
+    areaSystematic: "4 800 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Mobildata, Wi-Fi",
     wifiStatus: "Ikke aktuelt",
@@ -296,7 +305,8 @@ export const models: Model[] = [
     guideCables: "3",
     mowingTimePerCharge: "100 min",
     powerUsePerMonth: "13 kWh",
-    notes: "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves Plug-in modul. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
+    notes:
+      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves Plug-in modul. Ved systematisk klippemønster kan kapasiteten være høyere enn ved uregelmessig. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
   },
 
   {
@@ -305,6 +315,8 @@ export const models: Model[] = [
     articleNumber: "970820121",
     category: "Trådløs (4G)",
     area: "4 800 m²",
+    areaIrregular: "3 200 m²",
+    areaSystematic: "4 800 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Mobildata, Wi-Fi",
     wifiStatus: "Standard",
@@ -318,7 +330,8 @@ export const models: Model[] = [
     guideCables: "Virtuell",
     mowingTimePerCharge: "95 min",
     powerUsePerMonth: "13 kWh",
-    notes: "Trådløs fra start. Har WiFi og innebygd 4G. RS1 er ekstrautstyr.",
+    notes:
+      "Trådløs fra start. Har WiFi og innebygd 4G. Ved systematisk klippemønster kan kapasiteten være høyere enn ved uregelmessig. RS1 er ekstrautstyr.",
   },
 
   {
@@ -384,7 +397,8 @@ export const models: Model[] = [
     guideCables: "Virtuell",
     mowingTimePerCharge: "145 min",
     powerUsePerMonth: "25 kWh",
-    notes: "Proff AWD-modell med innebygd 4G. RS1/RS5 kjøpes separat ved behov.",
+    notes:
+      "Proff AWD-modell med innebygd 4G. RS1/RS5 kjøpes separat ved behov.",
   },
 
   {
