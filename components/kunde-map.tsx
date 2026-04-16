@@ -134,6 +134,8 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           clickableIcons: false,
           gestureHandling: "greedy",
           disableDoubleClickZoom: false,
+draggableCursor: "crosshair",
+draggingCursor: "move",
         });
 
         mapInstanceRef.current = map;
