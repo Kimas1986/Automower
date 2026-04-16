@@ -36,6 +36,9 @@ export default function KundePage() {
     longitude: number | null;
   } | null>(null);
 
+  const [drawnAreaSquareMeters, setDrawnAreaSquareMeters] = useState(0);
+  const [drawnPointsCount, setDrawnPointsCount] = useState(0);
+
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -81,6 +84,8 @@ export default function KundePage() {
     setSelectedAddress("");
     setSelectedPlaceId("");
     setSelectedCoords(null);
+    setDrawnAreaSquareMeters(0);
+    setDrawnPointsCount(0);
     setErrorMessage("");
 
     const query = address.trim();
@@ -155,6 +160,8 @@ export default function KundePage() {
         latitude: data.location?.latitude ?? null,
         longitude: data.location?.longitude ?? null,
       });
+      setDrawnAreaSquareMeters(0);
+      setDrawnPointsCount(0);
       setSuggestions([]);
       setShowSuggestions(false);
     } catch (error) {
@@ -169,10 +176,15 @@ export default function KundePage() {
     setSelectedAddress("");
     setSelectedPlaceId("");
     setSelectedCoords(null);
+    setDrawnAreaSquareMeters(0);
+    setDrawnPointsCount(0);
     setSuggestions([]);
     setShowSuggestions(false);
     setErrorMessage("");
   }
+
+  const hasValidLawnDrawing =
+    drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -337,7 +349,36 @@ export default function KundePage() {
                     <KundeMap
                       latitude={selectedCoords.latitude}
                       longitude={selectedCoords.longitude}
+                      onAreaChange={(areaSquareMeters, pointsCount) => {
+                        setDrawnAreaSquareMeters(areaSquareMeters);
+                        setDrawnPointsCount(pointsCount);
+                      }}
                     />
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm font-medium text-neutral-700">
+                        Registrert plenareal
+                      </span>
+                      <span className="text-lg font-bold text-neutral-900">
+                        {hasValidLawnDrawing
+                          ? `${new Intl.NumberFormat("nb-NO", {
+                              maximumFractionDigits: 0,
+                            }).format(drawnAreaSquareMeters)} m²`
+                          : "-"}
+                      </span>
+                    </div>
+
+                    {!hasValidLawnDrawing ? (
+                      <p className="mt-2 text-sm text-neutral-600">
+                        Sett minst 3 punkter i kartet for å beregne arealet.
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-sm text-neutral-600">
+                        Arealet er klart. Neste steg blir spørsmål om bruksmønster og ønsket løsning.
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -345,7 +386,7 @@ export default function KundePage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  disabled={!selectedPlaceId}
+                  disabled={!hasValidLawnDrawing}
                   className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Videre

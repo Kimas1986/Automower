@@ -9,6 +9,7 @@ type GoogleMapsWindow = Window & {
 type KundeMapProps = {
   latitude: number;
   longitude: number;
+  onAreaChange?: (areaSquareMeters: number, pointsCount: number) => void;
 };
 
 type LoadState = "idle" | "loading" | "ready" | "error";
@@ -67,7 +68,11 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
   return googleMapsScriptPromise;
 }
 
-export default function KundeMap({ latitude, longitude }: KundeMapProps) {
+export default function KundeMap({
+  latitude,
+  longitude,
+  onAreaChange,
+}: KundeMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
   const addressMarkerRef = useRef<any>(null);
@@ -284,6 +289,10 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
       setAreaSquareMeters(0);
     }
   }, [points]);
+
+  useEffect(() => {
+    onAreaChange?.(areaSquareMeters, points.length);
+  }, [areaSquareMeters, points.length, onAreaChange]);
 
   function resetDrawing() {
     setPoints([]);
