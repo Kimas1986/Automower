@@ -263,14 +263,14 @@ export default function KalkulatorPage() {
   const effectiveAddRS1 = rs1Allowed ? addRS1 : false;
 
   const baseHours = modelConfig?.baseHours ?? 0;
-  const extraHours =
-    (effectiveAddFourG ? 1 : 0) +
-    0;
+  const extraHours = effectiveAddFourG ? 1 : 0;
 
   const totalHours =
     overriddenHours > 0 ? overriddenHours : baseHours + extraHours;
 
-  const drivingCost = distance ? BASE_DRIVING_PRICE + distance.km * KM_RATE : 0;
+  const drivingCost = distance
+    ? Math.max(BASE_DRIVING_PRICE, distance.km * KM_RATE)
+    : 0;
   const laborCost = totalHours * HOURLY_RATE;
   const cableCost = cableMetersNumber * CABLE_PRICE;
 
@@ -713,13 +713,13 @@ export default function KalkulatorPage() {
                 {distance ? (
                   <div className="mt-2 space-y-1 text-sm text-neutral-700">
                     <p>
-                      Avstand:{" "}
+                      Avstand én vei:{" "}
                       <span className="font-semibold">
                         {distance.km.toFixed(1)} km
                       </span>
                     </p>
                     <p>
-                      Kjøretid:{" "}
+                      Kjøretid én vei:{" "}
                       <span className="font-semibold">
                         {distance.minutes.toFixed(0)} min
                       </span>
@@ -780,7 +780,9 @@ export default function KalkulatorPage() {
                 <input
                   value={
                     modelConfig
-                      ? `${formatHours(baseHours)} t${extraHours > 0 ? ` + ${extraHours} t ekstrautstyr` : ""}`
+                      ? `${formatHours(baseHours)} t${
+                          extraHours > 0 ? ` + ${extraHours} t ekstrautstyr` : ""
+                        }`
                       : ""
                   }
                   readOnly
@@ -844,14 +846,17 @@ export default function KalkulatorPage() {
                 <SummaryRow label="Baseadresse" value={BASE_ADDRESS} />
                 <SummaryRow label="Modell" value={selectedModel || "-"} />
                 <SummaryRow
-                  label="Avstand"
+                  label="Avstand én vei"
                   value={distance ? `${distance.km.toFixed(1)} km` : "-"}
                 />
                 <SummaryRow
                   label="Arbeidstid"
                   value={totalHours > 0 ? `${formatHours(totalHours)} t` : "-"}
                 />
-                <SummaryRow label="Kjøring" value={formatCurrency(drivingCost)} />
+                <SummaryRow
+                  label="Kjøring"
+                  value={formatCurrency(drivingCost)}
+                />
                 <SummaryRow label="Arbeid" value={formatCurrency(laborCost)} />
               </div>
 
@@ -916,15 +921,15 @@ export default function KalkulatorPage() {
                 Regler
               </p>
               <div className="mt-2 space-y-1 text-sm text-neutral-700">
-                <p>
-                  Oppmøte / grunnpris kjøring: {formatCurrency(BASE_DRIVING_PRICE)}
-                </p>
-                <p>Kjøring: {formatCurrency(KM_RATE)} / km</p>
+                <p>Kjøring: minimum {formatCurrency(BASE_DRIVING_PRICE)}</p>
+                <p>Kjøring utover minimum: {formatCurrency(KM_RATE)} / km</p>
+                <p>Avstand beregnes som Google-rute én vei</p>
                 <p>Timepris: {formatCurrency(HOURLY_RATE)} / t</p>
                 <p>Kabel: {formatCurrency(CABLE_PRICE)} / m</p>
                 <p>
-                  4G småmodeller / plugin: {formatCurrency(FOUR_G_SMALL_PRICE)} /
-                  {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t der det ikke er standard
+                  4G småmodeller / plugin: {formatCurrency(FOUR_G_SMALL_PRICE)} /{" "}
+                  {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t der det ikke er
+                  standard
                 </p>
                 <p>RS1: {formatCurrency(RS1_PRICE)} uten ekstra tid</p>
               </div>
