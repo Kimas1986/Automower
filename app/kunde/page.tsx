@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import KundeMap from "@/components/kunde-map";
+import { models, type Model } from "@/data/models";
 
 type Suggestion = {
   placeId: string;
@@ -60,6 +61,218 @@ const WEEK_DAYS = [
 ] as const;
 
 type WeekDayKey = (typeof WEEK_DAYS)[number]["key"];
+
+type RecommendedModel = {
+  model: Model;
+  reason: string;
+};
+
+function parseArea(area: string): number {
+  const digits = area.replace(/\s/g, "").match(/\d+/g);
+  if (!digits) return 0;
+  return Number(digits.join(""));
+}
+
+function parsePercent(value: string): number {
+  const match = value.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : 0;
+}
+
+function getAvailabilityFactor(dailyHours: DailyHoursOption, selectedDays: number) {
+  const hoursPerDayFactor =
+    dailyHours === "under-6"
+      ? 0.35
+      : dailyHours === "6-10"
+      ? 0.5
+      : dailyHours === "10-16"
+      ? 0.7
+      : dailyHours === "16-24"
+      ? 0.9
+      : 1;
+
+  const daysFactor = selectedDays / 7;
+
+  return hoursPerDayFactor * daysFactor;
+}
+
+function getAreaSlopeRequirement(option: SlopeAreaOption) {
+  if (option === "under-25") return 25;
+  if (option === "25-40") return 40;
+  if (option === "40-50") return 50;
+  if (option === "50-70") return 70;
+  return 40;
+}
+
+function getBoundarySlopeRequirement(option: SlopeBoundaryOption) {
+  if (option === "under-10") return 10;
+  if (option === "10-15") return 15;
+  if (option === "15-20") return 20;
+  if (option === "20-25") return 25;
+  return 15;
+}
+
+function isWirelessCompatible(model: Model) {
+  return (
+    model.category === "Trådløs (WiFi)" ||
+    model.category === "Trådløs (4G)" ||
+    model.category === "Kabel / oppgraderbar" ||
+    model.category === "Pro"
+  );
+}
+
+function isCableCompatible(model: Model) {
+  return model.category === "Kun kabel" || model.category === "Kabel / oppgraderbar";
+}
+
+function recommendModels(input: {
+  areaSquareMeters: number;
+  dailyHours: DailyHoursOption;
+  selectedDaysCount: number;
+  boundaryType: BoundaryTypeOption;
+  slopeArea: SlopeAreaOption;
+  slopeBoundary: SlopeBoundaryOption;
+  fullWifiCoverage: "yes" | "no" | "unknown" | "";
+  wants4G: "yes" | "no" | "unknown" | "";
+  complexGarden: "yes" | "no" | "unknown" | "";
+}): {
+  recommended: RecommendedModel | null;
+  saferAlternative: RecommendedModel | null;
+  neededCapacity: number;
+  warnings: string[];
+} {
+  const availabilityFactor = getAvailabilityFactor(
+    input.dailyHours,
+    input.selectedDaysCount
+  );
+
+  const availabilityPenalty =
+    availabilityFactor > 0 ? Math.max(1, 1 / availabilityFactor) : 2;
+
+  let complexityFactor = 1;
+
+  if (input.complexGarden === "yes") complexityFactor += 0.15;
+  if (input.slopeArea === "unknown") complexityFactor += 0.08;
+  if (input.slopeBoundary === "unknown") complexityFactor += 0.05;
+  if (input.fullWifiCoverage === "unknown") complexityFactor += 0.03;
+  if (input.wants4G === "unknown") complexityFactor += 0.02;
+  if (input.boundaryType === "tradlos" && input.fullWifiCoverage === "no") complexityFactor += 0.08;
+
+  const neededCapacity = Math.round(
+    input.areaSquareMeters * availabilityPenalty * complexityFactor
+  );
+
+  const neededSlope = getAreaSlopeRequirement(input.slopeArea);
+  const neededBoundarySlope = getBoundarySlopeRequirement(input.slopeBoundary);
+
+  const warnings: string[] = [];
+
+  if (input.slopeArea === "unknown" || input.slopeBoundary === "unknown") {
+    warnings.push("Du har ikke oppgitt all helling. Vi viser derfor litt tryggere forslag.");
+  }
+
+  if (input.boundaryType === "tradlos" && input.fullWifiCoverage === "no" && input.wants4G !== "yes") {
+    warnings.push("Du ønsker kabel-fri drift uten god WiFi. 4G eller annen stabil tilkobling bør vurderes.");
+  }
+
+  const filtered = models
+    .filter((model) => {
+      const modelArea = parseArea(model.area);
+      const modelSlope = parsePercent(model.slope);
+      const modelBoundarySlope = parsePercent(model.maxSlopeBoundary);
+
+      if (modelArea < neededCapacity) return false;
+      if (modelSlope < neededSlope) return false;
+      if (modelBoundarySlope < neededBoundarySlope) return false;
+
+      if (input.boundaryType === "kabel" && !isCableCompatible(model)) return false;
+      if (input.boundaryType === "tradlos" && !isWirelessCompatible(model)) return false;
+
+      if (input.boundaryType === "tradlos" && input.wants4G === "yes") {
+        if (
+          model.fourGStatus !== "Standard" &&
+          model.fourGStatus !== "Tilbehør"
+        ) {
+          return false;
+        }
+      }
+
+      if (
+        input.boundaryType === "tradlos" &&
+        input.fullWifiCoverage === "yes" &&
+        input.wants4G === "no"
+      ) {
+        const canUseWifi =
+          model.wifiStatus === "Standard" ||
+          model.category === "Kabel / oppgraderbar" ||
+          model.category === "Pro";
+        if (!canUseWifi) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => parseArea(a.area) - parseArea(b.area));
+
+  if (filtered.length === 0) {
+    return {
+      recommended: null,
+      saferAlternative: null,
+      neededCapacity,
+      warnings,
+    };
+  }
+
+  const recommendedModel = filtered[0];
+  const saferAlternativeModel =
+    filtered.find((model) => parseArea(model.area) > parseArea(recommendedModel.area)) ??
+    filtered[Math.min(1, filtered.length - 1)] ??
+    null;
+
+  function buildReason(model: Model, variant: "recommended" | "safer"): string {
+    const parts: string[] = [];
+
+    if (variant === "recommended") {
+      parts.push("Passer best ut fra areal, driftstid og valgt løsning.");
+    } else {
+      parts.push("Gir litt mer kapasitet og margin hvis forholdene blir tøffere enn antatt.");
+    }
+
+    if (input.boundaryType === "tradlos") {
+      if (model.category === "Kabel / oppgraderbar") {
+        parts.push("Kan brukes kabel-fritt, men krever ekstrautstyr.");
+      } else if (model.category === "Trådløs (4G)" || model.category === "Trådløs (WiFi)") {
+        parts.push("Er godt egnet for kabel-fri drift.");
+      }
+    }
+
+    if (input.wants4G === "yes" && model.fourGStatus === "Standard") {
+      parts.push("Har 4G som standard.");
+    } else if (input.wants4G === "yes" && model.fourGStatus === "Tilbehør") {
+      parts.push("Kan få 4G som tilvalg.");
+    }
+
+    if (input.complexGarden === "yes") {
+      parts.push("Er vurdert opp mot litt mer krevende hage.");
+    }
+
+    return parts.join(" ");
+  }
+
+  return {
+    recommended: {
+      model: recommendedModel,
+      reason: buildReason(recommendedModel, "recommended"),
+    },
+    saferAlternative:
+      saferAlternativeModel && saferAlternativeModel.id !== recommendedModel.id
+        ? {
+            model: saferAlternativeModel,
+            reason: buildReason(saferAlternativeModel, "safer"),
+          }
+        : null,
+    neededCapacity,
+    warnings,
+  };
+}
 
 export default function KundePage() {
   const [started, setStarted] = useState(false);
@@ -244,13 +457,42 @@ export default function KundePage() {
   const hasValidLawnDrawing =
     drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
 
-  const canContinueToRecommendations =
+  const canShowRecommendations =
     hasValidLawnDrawing &&
     dailyHours !== "" &&
     selectedDays.length > 0 &&
     boundaryType !== "" &&
     slopeArea !== "" &&
     slopeBoundary !== "";
+
+  const recommendationResult = useMemo(() => {
+    if (!canShowRecommendations) {
+      return null;
+    }
+
+    return recommendModels({
+      areaSquareMeters: drawnAreaSquareMeters,
+      dailyHours: dailyHours as DailyHoursOption,
+      selectedDaysCount: selectedDays.length,
+      boundaryType,
+      slopeArea: slopeArea as SlopeAreaOption,
+      slopeBoundary: slopeBoundary as SlopeBoundaryOption,
+      fullWifiCoverage,
+      wants4G,
+      complexGarden,
+    });
+  }, [
+    canShowRecommendations,
+    drawnAreaSquareMeters,
+    dailyHours,
+    selectedDays.length,
+    boundaryType,
+    slopeArea,
+    slopeBoundary,
+    fullWifiCoverage,
+    wants4G,
+    complexGarden,
+  ]);
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -606,13 +848,67 @@ export default function KundePage() {
                 </div>
               ) : null}
 
+              {recommendationResult ? (
+                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Steg 4
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold sm:text-xl">
+                    Våre forslag
+                  </h2>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Vi har regnet et behov på omtrent{" "}
+                    <span className="font-semibold">
+                      {new Intl.NumberFormat("nb-NO").format(recommendationResult.neededCapacity)} m²
+                    </span>{" "}
+                    ut fra areal, driftstid og forholdene du har valgt.
+                  </p>
+
+                  {recommendationResult.warnings.length > 0 ? (
+                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                      <div className="space-y-1">
+                        {recommendationResult.warnings.map((warning) => (
+                          <p key={warning}>{warning}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    {recommendationResult.recommended ? (
+                      <RecommendationCard
+                        title="Anbefalt modell"
+                        model={recommendationResult.recommended.model}
+                        reason={recommendationResult.recommended.reason}
+                        featured
+                      />
+                    ) : null}
+
+                    {recommendationResult.saferAlternative ? (
+                      <RecommendationCard
+                        title="Tryggere alternativ"
+                        model={recommendationResult.saferAlternative.model}
+                        reason={recommendationResult.saferAlternative.reason}
+                      />
+                    ) : null}
+                  </div>
+
+                  {!recommendationResult.recommended ? (
+                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                      Vi fant ingen tydelig match med valgene du har gjort. Prøv å åpne for flere
+                      driftstimer, flere dager eller velg en annen løsning.
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  disabled={!canContinueToRecommendations}
+                  disabled={!recommendationResult?.recommended}
                   className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Videre
+                  Videre til pris og montering
                 </button>
 
                 <button
@@ -652,5 +948,92 @@ function Field({
       <span className="mb-2 block text-sm font-medium text-neutral-700">{label}</span>
       {children}
     </label>
+  );
+}
+
+function RecommendationCard({
+  title,
+  model,
+  reason,
+  featured = false,
+}: {
+  title: string;
+  model: Model;
+  reason: string;
+  featured?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        featured
+          ? "border-neutral-900 bg-neutral-900 text-white"
+          : "border-neutral-200 bg-neutral-50 text-neutral-900"
+      }`}
+    >
+      <p
+        className={`text-xs font-semibold uppercase tracking-wide ${
+          featured ? "text-neutral-300" : "text-neutral-500"
+        }`}
+      >
+        {title}
+      </p>
+
+      <h3 className="mt-2 text-xl font-bold">{model.name}</h3>
+      <p className={`mt-1 text-sm ${featured ? "text-neutral-300" : "text-neutral-600"}`}>
+        Art.nr: {model.articleNumber}
+      </p>
+
+      <div className="mt-4 space-y-2 text-sm">
+        <RecommendationRow label="Område" value={model.area} featured={featured} />
+        <RecommendationRow label="Kategori" value={model.category} featured={featured} />
+        <RecommendationRow label="Helling" value={model.slope} featured={featured} />
+        <RecommendationRow
+          label="Grense / ytterkant"
+          value={model.maxSlopeBoundary}
+          featured={featured}
+        />
+        <RecommendationRow label="4G" value={model.fourGStatus} featured={featured} />
+        <RecommendationRow label="WiFi" value={model.wifiStatus} featured={featured} />
+      </div>
+
+      <div
+        className={`mt-4 rounded-2xl p-4 text-sm ${
+          featured ? "bg-white/10 text-neutral-100" : "bg-white text-neutral-700"
+        }`}
+      >
+        <p className="font-semibold">Hvorfor dette valget</p>
+        <p className="mt-1">{reason}</p>
+      </div>
+
+      <div
+        className={`mt-4 rounded-2xl p-4 text-sm ${
+          featured ? "bg-white/10 text-neutral-100" : "bg-white text-neutral-700"
+        }`}
+      >
+        <p className="font-semibold">Kort forklart</p>
+        <p className="mt-1">{model.notes}</p>
+      </div>
+    </div>
+  );
+}
+
+function RecommendationRow({
+  label,
+  value,
+  featured,
+}: {
+  label: string;
+  value: string;
+  featured: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-start justify-between gap-3 rounded-xl px-3 py-2 ${
+        featured ? "bg-white/10" : "border border-neutral-200 bg-white"
+      }`}
+    >
+      <span className={featured ? "text-neutral-300" : "text-neutral-500"}>{label}</span>
+      <span className="max-w-[55%] text-right font-medium">{value}</span>
+    </div>
   );
 }
