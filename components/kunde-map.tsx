@@ -6,18 +6,23 @@ type GoogleMapsWindow = Window & {
   google?: any;
 };
 
-type KundeMapProps = {
-  latitude: number;
-  longitude: number;
-  onAreaChange?: (areaSquareMeters: number, pointsCount: number) => void;
-};
-
-type LoadState = "idle" | "loading" | "ready" | "error";
-
-type Point = {
+export type Point = {
   lat: number;
   lng: number;
 };
+
+type KundeMapProps = {
+  latitude: number;
+  longitude: number;
+  onAreaChange?: (
+    areaSquareMeters: number,
+    pointsCount: number,
+    perimeterMeters?: number,
+    points?: Point[]
+  ) => void;
+};
+
+type LoadState = "idle" | "loading" | "ready" | "error";
 
 let googleMapsScriptPromise: Promise<void> | null = null;
 
@@ -68,6 +73,35 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
   return googleMapsScriptPromise;
 }
 
+function calculatePerimeterMeters(points: Point[]) {
+  if (points.length < 2 || typeof window === "undefined") {
+    return 0;
+  }
+
+  const googleWindow = window as GoogleMapsWindow;
+
+  if (!googleWindow.google?.maps?.geometry?.spherical) {
+    return 0;
+  }
+
+  let total = 0;
+
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index];
+    const next = points[(index + 1) % points.length];
+
+    const from = new googleWindow.google.maps.LatLng(current.lat, current.lng);
+    const to = new googleWindow.google.maps.LatLng(next.lat, next.lng);
+
+    total += googleWindow.google.maps.geometry.spherical.computeDistanceBetween(
+      from,
+      to
+    );
+  }
+
+  return total;
+}
+
 export default function KundeMap({
   latitude,
   longitude,
@@ -84,9 +118,11 @@ export default function KundeMap({
   const [errorMessage, setErrorMessage] = useState("");
   const [points, setPoints] = useState<Point[]>([]);
   const [areaSquareMeters, setAreaSquareMeters] = useState(0);
+  const [perimeterMeters, setPerimeterMeters] = useState(0);
 
   useEffect(() => {
-    const browserApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY ?? "";
+    const browserApiKey =
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY ?? "";
 
     if (!browserApiKey) {
       setLoadState("error");
@@ -285,18 +321,21 @@ export default function KundeMap({
         ) || 0;
 
       setAreaSquareMeters(polygonArea);
+      setPerimeterMeters(calculatePerimeterMeters(points));
     } else {
       setAreaSquareMeters(0);
+      setPerimeterMeters(0);
     }
   }, [points]);
 
   useEffect(() => {
-    onAreaChange?.(areaSquareMeters, points.length);
-  }, [areaSquareMeters, points.length, onAreaChange]);
+    onAreaChange?.(areaSquareMeters, points.length, perimeterMeters, points);
+  }, [areaSquareMeters, perimeterMeters, points.length, points, onAreaChange]);
 
   function resetDrawing() {
     setPoints([]);
     setAreaSquareMeters(0);
+    setPerimeterMeters(0);
   }
 
   function undoLastPoint() {
@@ -321,7 +360,7 @@ export default function KundeMap({
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <StatCard label="Punkter" value={String(points.length)} />
         <StatCard
           label="Areal"
@@ -330,6 +369,16 @@ export default function KundeMap({
               ? `${new Intl.NumberFormat("nb-NO", {
                   maximumFractionDigits: 0,
                 }).format(areaSquareMeters)} m²`
+              : "-"
+          }
+        />
+        <StatCard
+          label="Omkrets"
+          value={
+            perimeterMeters > 0
+              ? `${new Intl.NumberFormat("nb-NO", {
+                  maximumFractionDigits: 0,
+                }).format(perimeterMeters)} m`
               : "-"
           }
         />

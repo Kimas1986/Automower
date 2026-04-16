@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import KundeMap from "@/components/kunde-map";
+import KundeMap, { type Point } from "@/components/kunde-map";
 import { models, type Model } from "@/data/models";
 
 type Suggestion = {
@@ -197,6 +197,49 @@ function mapModelToCalculatorName(model: Model): string {
   return model.name.replace("Automower ", "");
 }
 
+function getGuideCount(model: Model) {
+  const digits = model.guideCables.match(/\d+/);
+  return digits ? Number(digits[0]) : 0;
+}
+
+function calculateLongestSpanMeters(points: Point[]) {
+  if (points.length < 2) return 0;
+
+  let longest = 0;
+
+  for (let i = 0; i < points.length; i += 1) {
+    for (let j = i + 1; j < points.length; j += 1) {
+      const latDiff = (points[i].lat - points[j].lat) * 111320;
+      const avgLat = ((points[i].lat + points[j].lat) / 2) * (Math.PI / 180);
+      const lngDiff =
+        (points[i].lng - points[j].lng) * 111320 * Math.cos(avgLat);
+      const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+
+      if (distance > longest) {
+        longest = distance;
+      }
+    }
+  }
+
+  return longest;
+}
+
+function estimateCableMeters(model: Model, perimeterMeters: number, points: Point[]) {
+  const guideCount = getGuideCount(model);
+  const longestSpanMeters = calculateLongestSpanMeters(points);
+  const guideMeters = longestSpanMeters * 0.75 * guideCount;
+  const rawTotal = perimeterMeters + guideMeters;
+  const totalWithMargin = rawTotal * 1.15;
+
+  return {
+    guideCount,
+    perimeterMeters,
+    guideMeters,
+    longestSpanMeters,
+    totalWithMargin: Math.round(totalWithMargin),
+  };
+}
+
 function buildCalculatorHref(input: {
   selectedAddress: string;
   areaSquareMeters: number;
@@ -206,6 +249,7 @@ function buildCalculatorHref(input: {
   wants4G: "yes" | "no" | "unknown" | "";
   fullWifiCoverage: "yes" | "no" | "unknown" | "";
   complexGarden: "yes" | "no" | "unknown" | "";
+  cableEstimateMeters: number;
 }) {
   const params = new URLSearchParams();
 
@@ -221,12 +265,8 @@ function buildCalculatorHref(input: {
   params.set("wifi", input.fullWifiCoverage);
   params.set("complexGarden", input.complexGarden);
 
-  if (input.boundaryType === "kabel") {
-    const suggestedCableMeters = Math.max(
-      0,
-      Math.round(Math.sqrt(input.areaSquareMeters) * 4)
-    );
-    params.set("cableMeters", String(suggestedCableMeters));
+  if (input.boundaryType === "kabel" && input.cableEstimateMeters > 0) {
+    params.set("cableMeters", String(input.cableEstimateMeters));
   }
 
   return `/kalkulator?${params.toString()}`;
@@ -449,6 +489,8 @@ export default function KundePage() {
 
   const [drawnAreaSquareMeters, setDrawnAreaSquareMeters] = useState(0);
   const [drawnPointsCount, setDrawnPointsCount] = useState(0);
+  const [drawnPerimeterMeters, setDrawnPerimeterMeters] = useState(0);
+  const [drawnPoints, setDrawnPoints] = useState<Point[]>([]);
 
   const [dailyHours, setDailyHours] = useState<DailyHoursOption | "">("");
   const [selectedDays, setSelectedDays] = useState<WeekDayKey[]>([]);
@@ -517,6 +559,8 @@ export default function KundePage() {
     setSelectedCoords(null);
     setDrawnAreaSquareMeters(0);
     setDrawnPointsCount(0);
+    setDrawnPerimeterMeters(0);
+    setDrawnPoints([]);
     setErrorMessage("");
 
     const query = address.trim();
@@ -593,6 +637,8 @@ export default function KundePage() {
       });
       setDrawnAreaSquareMeters(0);
       setDrawnPointsCount(0);
+      setDrawnPerimeterMeters(0);
+      setDrawnPoints([]);
       setSuggestions([]);
       setShowSuggestions(false);
     } catch (error) {
@@ -609,6 +655,8 @@ export default function KundePage() {
     setSelectedCoords(null);
     setDrawnAreaSquareMeters(0);
     setDrawnPointsCount(0);
+    setDrawnPerimeterMeters(0);
+    setDrawnPoints([]);
     setDailyHours("");
     setSelectedDays([]);
     setBoundaryType("");
@@ -672,6 +720,28 @@ export default function KundePage() {
     complexGarden,
   ]);
 
+  const cableEstimate = useMemo(() => {
+    if (
+      !recommendationResult?.recommended ||
+      boundaryType !== "kabel" ||
+      drawnPerimeterMeters <= 0 ||
+      drawnPoints.length < 3
+    ) {
+      return null;
+    }
+
+    return estimateCableMeters(
+      recommendationResult.recommended.model,
+      drawnPerimeterMeters,
+      drawnPoints
+    );
+  }, [
+    recommendationResult,
+    boundaryType,
+    drawnPerimeterMeters,
+    drawnPoints,
+  ]);
+
   const calculatorHref =
     recommendationResult?.recommended && boundaryType && mowingPattern
       ? buildCalculatorHref({
@@ -683,6 +753,7 @@ export default function KundePage() {
           wants4G,
           fullWifiCoverage,
           complexGarden,
+          cableEstimateMeters: cableEstimate?.totalWithMargin ?? 0,
         })
       : "";
 
@@ -853,9 +924,16 @@ export default function KundePage() {
                     <KundeMap
                       latitude={selectedCoords.latitude}
                       longitude={selectedCoords.longitude}
-                      onAreaChange={(areaSquareMeters, pointsCount) => {
+                      onAreaChange={(
+                        areaSquareMeters,
+                        pointsCount,
+                        perimeterMeters,
+                        points
+                      ) => {
                         setDrawnAreaSquareMeters(areaSquareMeters);
                         setDrawnPointsCount(pointsCount);
+                        setDrawnPerimeterMeters(perimeterMeters ?? 0);
+                        setDrawnPoints(points ?? []);
                       }}
                     />
                   </div>
@@ -1121,6 +1199,34 @@ export default function KundePage() {
                       />
                     ) : null}
                   </div>
+
+                  {boundaryType === "kabel" && cableEstimate ? (
+                    <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <p className="text-sm font-semibold text-neutral-900">
+                        Estimert kabelbehov
+                      </p>
+                      <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                        <p>
+                          Grensekabel:{" "}
+                          <span className="font-semibold">
+                            {Math.round(cableEstimate.perimeterMeters)} m
+                          </span>
+                        </p>
+                        <p>
+                          Guidekabel ({cableEstimate.guideCount}):{" "}
+                          <span className="font-semibold">
+                            {Math.round(cableEstimate.guideMeters)} m
+                          </span>
+                        </p>
+                        <p>
+                          Påslag 15 %:{" "}
+                          <span className="font-semibold">
+                            {cableEstimate.totalWithMargin} m totalt
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {!recommendationResult.recommended ? (
                     <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
