@@ -88,12 +88,12 @@ function getAvailabilityFactor(
     dailyHours === "under-6"
       ? 0.35
       : dailyHours === "6-10"
-      ? 0.5
-      : dailyHours === "10-16"
-      ? 0.7
-      : dailyHours === "16-24"
-      ? 0.9
-      : 1;
+        ? 0.5
+        : dailyHours === "10-16"
+          ? 0.7
+          : dailyHours === "16-24"
+            ? 0.9
+            : 1;
 
   const daysFactor = selectedDays / 7;
 
@@ -191,6 +191,45 @@ function getPatternLabel(mowingPattern: MowingPatternOption) {
   if (mowingPattern === "systematic") return "systematisk";
   if (mowingPattern === "irregular") return "uregelmessig";
   return "uregelmessig";
+}
+
+function mapModelToCalculatorName(model: Model): string {
+  return model.name.replace("Automower ", "");
+}
+
+function buildCalculatorHref(input: {
+  selectedAddress: string;
+  areaSquareMeters: number;
+  model: Model;
+  boundaryType: BoundaryTypeOption;
+  mowingPattern: MowingPatternOption;
+  wants4G: "yes" | "no" | "unknown" | "";
+  fullWifiCoverage: "yes" | "no" | "unknown" | "";
+  complexGarden: "yes" | "no" | "unknown" | "";
+}) {
+  const params = new URLSearchParams();
+
+  if (input.selectedAddress) {
+    params.set("address", input.selectedAddress);
+  }
+
+  params.set("model", mapModelToCalculatorName(input.model));
+  params.set("area", String(Math.round(input.areaSquareMeters)));
+  params.set("boundaryType", input.boundaryType);
+  params.set("mowingPattern", input.mowingPattern);
+  params.set("wants4G", input.wants4G);
+  params.set("wifi", input.fullWifiCoverage);
+  params.set("complexGarden", input.complexGarden);
+
+  if (input.boundaryType === "kabel") {
+    const suggestedCableMeters = Math.max(
+      0,
+      Math.round(Math.sqrt(input.areaSquareMeters) * 4)
+    );
+    params.set("cableMeters", String(suggestedCableMeters));
+  }
+
+  return `/kalkulator?${params.toString()}`;
 }
 
 function recommendModels(input: {
@@ -590,7 +629,8 @@ export default function KundePage() {
     );
   }
 
-  const hasValidLawnDrawing = drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
+  const hasValidLawnDrawing =
+    drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
 
   const canShowRecommendations =
     hasValidLawnDrawing &&
@@ -631,6 +671,20 @@ export default function KundePage() {
     wants4G,
     complexGarden,
   ]);
+
+  const calculatorHref =
+    recommendationResult?.recommended && boundaryType && mowingPattern
+      ? buildCalculatorHref({
+          selectedAddress,
+          areaSquareMeters: drawnAreaSquareMeters,
+          model: recommendationResult.recommended.model,
+          boundaryType,
+          mowingPattern: mowingPattern as MowingPatternOption,
+          wants4G,
+          fullWifiCoverage,
+          complexGarden,
+        })
+      : "";
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -1079,13 +1133,22 @@ export default function KundePage() {
               ) : null}
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  disabled={!recommendationResult?.recommended}
-                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Videre til pris og montering
-                </button>
+                {recommendationResult?.recommended && calculatorHref ? (
+                  <a
+                    href={calculatorHref}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                  >
+                    Videre til pris og montering
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white opacity-50"
+                  >
+                    Videre til pris og montering
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -1190,7 +1253,11 @@ function RecommendationCard({
           value={model.maxSlopeBoundary}
           featured={featured}
         />
-        <RecommendationRow label="4G" value={model.fourGStatus} featured={featured} />
+        <RecommendationRow
+          label="4G"
+          value={model.fourGStatus}
+          featured={featured}
+        />
         <RecommendationRow
           label="WiFi"
           value={model.wifiStatus}

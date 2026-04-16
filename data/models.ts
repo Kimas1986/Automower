@@ -267,6 +267,8 @@ export const models: Model[] = [
     articleNumber: "970819821",
     category: "Kabel / oppgraderbar",
     area: "3 300 m²",
+    areaIrregular: "2 200 m²",
+    areaSystematic: "3 300 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Wi-Fi",
     wifiStatus: "Ikke aktuelt",
@@ -281,7 +283,7 @@ export const models: Model[] = [
     mowingTimePerCharge: "135 min",
     powerUsePerMonth: "11 kWh",
     notes:
-      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves både Plug-in modul og Connect-kort. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
+      "Kabel som standard. For kabel-fri drift kreves Plug-in modul. For 4G kreves både Plug-in modul og Connect-kort. Ved systematisk klippemønster kan kapasiteten være høyere enn ved uregelmessig. RS1 trengs ikke dersom klipperen går via cloud med stabil tilkobling.",
   },
 
   {
@@ -289,7 +291,7 @@ export const models: Model[] = [
     name: "Automower 430X NERA",
     articleNumber: "970535221",
     category: "Kabel / oppgraderbar",
-    area: "3 200 m²",
+    area: "4 800 m²",
     areaIrregular: "3 200 m²",
     areaSystematic: "4 800 m²",
     slope: "50 %",
@@ -407,6 +409,8 @@ export const models: Model[] = [
     articleNumber: "970820221",
     category: "Trådløs (4G)",
     area: "7 500 m²",
+    areaIrregular: "5 000 m²",
+    areaSystematic: "7 500 m²",
     slope: "50 %",
     connectivity: "Bluetooth®, Mobildata, Wi-Fi",
     wifiStatus: "Standard",
@@ -420,7 +424,8 @@ export const models: Model[] = [
     guideCables: "Virtuell",
     mowingTimePerCharge: "160 min",
     powerUsePerMonth: "18 kWh",
-    notes: "Trådløs fra start. Har WiFi og innebygd 4G. RS1 er ekstrautstyr.",
+    notes:
+      "Trådløs fra start. Har WiFi og innebygd 4G. Ved systematisk klippemønster kan kapasiteten være høyere enn ved uregelmessig. RS1 er ekstrautstyr.",
   },
 
   {
