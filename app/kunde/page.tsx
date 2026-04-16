@@ -243,7 +243,8 @@ function estimateCableMeters(model: Model, perimeterMeters: number, points: Poin
 function buildCalculatorHref(input: {
   selectedAddress: string;
   areaSquareMeters: number;
-  model: Model;
+  recommendedModel: Model;
+  saferAlternative: Model | null;
   boundaryType: BoundaryTypeOption;
   mowingPattern: MowingPatternOption;
   wants4G: "yes" | "no" | "unknown" | "";
@@ -257,7 +258,13 @@ function buildCalculatorHref(input: {
     params.set("address", input.selectedAddress);
   }
 
-  params.set("model", mapModelToCalculatorName(input.model));
+  params.set("model", mapModelToCalculatorName(input.recommendedModel));
+  params.set("recommendedModelId", input.recommendedModel.id);
+
+  if (input.saferAlternative) {
+    params.set("saferModelId", input.saferAlternative.id);
+  }
+
   params.set("area", String(Math.round(input.areaSquareMeters)));
   params.set("boundaryType", input.boundaryType);
   params.set("mowingPattern", input.mowingPattern);
@@ -747,7 +754,8 @@ export default function KundePage() {
       ? buildCalculatorHref({
           selectedAddress,
           areaSquareMeters: drawnAreaSquareMeters,
-          model: recommendationResult.recommended.model,
+          recommendedModel: recommendationResult.recommended.model,
+          saferAlternative: recommendationResult.saferAlternative?.model ?? null,
           boundaryType,
           mowingPattern: mowingPattern as MowingPatternOption,
           wants4G,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { models, type Model } from "@/data/models";
 
 const BASE_ADDRESS = "Joakim Brevolds Allé 4, 7170 Åfjord";
 
@@ -208,6 +209,30 @@ type PrefillState = {
   complexGarden: string;
 };
 
+function toCalculatorModelName(fullName: string) {
+  return fullName.replace("Automower ", "");
+}
+
+function fromCalculatorModelName(name: string) {
+  return models.find((model) => toCalculatorModelName(model.name) === name) ?? null;
+}
+
+function getSuggestedCalculatorNames(ids: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  ids.forEach((id) => {
+    const model = models.find((item) => item.id === id);
+    if (!model) return;
+    const calculatorName = toCalculatorModelName(model.name);
+    if (seen.has(calculatorName)) return;
+    seen.add(calculatorName);
+    result.push(calculatorName);
+  });
+
+  return result;
+}
+
 export default function KalkulatorPage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -224,6 +249,8 @@ export default function KalkulatorPage() {
     wants4G: "",
     complexGarden: "",
   });
+
+  const [suggestedModelNames, setSuggestedModelNames] = useState<string[]>([]);
 
   const [distance, setDistance] = useState<DistanceResult | null>(null);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
@@ -244,6 +271,11 @@ export default function KalkulatorPage() {
 
   const modelConfig = useMemo(
     () => MODEL_CONFIGS.find((m) => m.name === selectedModel) ?? null,
+    [selectedModel]
+  );
+
+  const selectedModelData = useMemo(
+    () => fromCalculatorModelName(selectedModel),
     [selectedModel]
   );
 
@@ -282,10 +314,12 @@ export default function KalkulatorPage() {
         : 0;
 
   const rs1ProductCost = effectiveAddRS1 ? RS1_PRICE : 0;
+  const mowerPrice = selectedModelData?.mowerPrice ?? 0;
 
   const installationAndDrivingTotal = drivingCost + laborCost;
   const accessoriesTotal = cableCost + fourGProductCost + rs1ProductCost;
-  const totalPrice = installationAndDrivingTotal + accessoriesTotal;
+  const grandTotal =
+    installationAndDrivingTotal + accessoriesTotal + Math.max(0, mowerPrice);
 
   useEffect(() => {
     return () => {
@@ -330,15 +364,27 @@ export default function KalkulatorPage() {
     const wants4GQuery = params.get("wants4G") ?? "";
     const complexGarden = params.get("complexGarden") ?? "";
     const cableMetersQuery = params.get("cableMeters") ?? "";
+    const recommendedModelId = params.get("recommendedModelId") ?? "";
+    const saferModelId = params.get("saferModelId") ?? "";
 
     if (address) {
       skipNextAutocompleteRef.current = true;
       setCustomerAddress(address);
     }
 
-    if (model && MODEL_CONFIGS.some((item) => item.name === model)) {
-      setSelectedModel(model);
-      resetOptionalChoices(model);
+    const modelOptions = getSuggestedCalculatorNames(
+      [recommendedModelId, saferModelId].filter(Boolean)
+    );
+    setSuggestedModelNames(modelOptions);
+
+    const initialModel =
+      model && MODEL_CONFIGS.some((item) => item.name === model)
+        ? model
+        : modelOptions[0] ?? "";
+
+    if (initialModel) {
+      setSelectedModel(initialModel);
+      resetOptionalChoices(initialModel);
     }
 
     if (cableMetersQuery) {
@@ -355,8 +401,8 @@ export default function KalkulatorPage() {
     });
 
     const prefilledModel =
-      model && MODEL_CONFIGS.some((item) => item.name === model)
-        ? MODEL_CONFIGS.find((item) => item.name === model) ?? null
+      initialModel && MODEL_CONFIGS.some((item) => item.name === initialModel)
+        ? MODEL_CONFIGS.find((item) => item.name === initialModel) ?? null
         : null;
 
     const prefilledFourGAllowed =
@@ -540,6 +586,20 @@ export default function KalkulatorPage() {
     }
   }
 
+  function chooseSuggestedModel(modelName: string) {
+    setSelectedModel(modelName);
+    resetOptionalChoices(modelName);
+    setManualHours("");
+
+    const nextConfig = MODEL_CONFIGS.find((item) => item.name === modelName);
+    const fourGCanBeAdded =
+      nextConfig?.fourGType === "small" || nextConfig?.fourGType === "plugin";
+
+    if (prefill.wants4G === "yes" && fourGCanBeAdded) {
+      setAddFourG(true);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
@@ -644,6 +704,33 @@ export default function KalkulatorPage() {
                             : prefill.complexGarden}
                     </p>
                   ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {suggestedModelNames.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <p className="text-sm font-semibold text-neutral-900">
+                  Forslag fra kundeveilederen
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {suggestedModelNames.map((modelName) => {
+                    const active = modelName === selectedModel;
+                    return (
+                      <button
+                        key={modelName}
+                        type="button"
+                        onClick={() => chooseSuggestedModel(modelName)}
+                        className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                          active
+                            ? "border-neutral-900 bg-neutral-900 text-white"
+                            : "border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50"
+                        }`}
+                      >
+                        {modelName}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
@@ -839,12 +926,27 @@ export default function KalkulatorPage() {
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                Klipper
+              </p>
+
+              <div className="mt-3 space-y-2 text-sm">
+                <SummaryRow label="Valgt modell" value={selectedModel || "-"} />
+                <SummaryRow
+                  label="Klipperpris"
+                  value={
+                    mowerPrice > 0 ? formatCurrency(mowerPrice) : "Sett pris i data/models.ts"
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 Montering og kjøring
               </p>
 
               <div className="mt-3 space-y-2 text-sm">
                 <SummaryRow label="Baseadresse" value={BASE_ADDRESS} />
-                <SummaryRow label="Modell" value={selectedModel || "-"} />
                 <SummaryRow
                   label="Avstand én vei"
                   value={distance ? `${distance.km.toFixed(1)} km` : "-"}
@@ -909,12 +1011,18 @@ export default function KalkulatorPage() {
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-base font-semibold">Total inkl. mva</span>
+                <span className="text-base font-semibold">Total ferdig estimat</span>
                 <span className="text-xl font-bold">
-                  {formatCurrency(totalPrice)}
+                  {formatCurrency(grandTotal)}
                 </span>
               </div>
             </div>
+
+            {mowerPrice <= 0 ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                Klipperprisen er ikke satt ennå. Fyll inn <span className="font-semibold">mowerPrice</span> i <span className="font-semibold">data/models.ts</span> for å få komplett totalestimat.
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
