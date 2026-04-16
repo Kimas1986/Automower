@@ -24,21 +24,21 @@ type ModelConfig = {
 const MODEL_CONFIGS: ModelConfig[] = [
   {
     name: "Aspire R4",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "none",
     rs1Allowed: false,
     cableAllowed: true,
   },
   {
     name: "305",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "small",
     rs1Allowed: false,
     cableAllowed: true,
   },
   {
     name: "315 Mk II",
-    baseHours: 4,
+    baseHours: 3.5,
     fourGType: "small",
     rs1Allowed: false,
     cableAllowed: true,
@@ -46,21 +46,21 @@ const MODEL_CONFIGS: ModelConfig[] = [
 
   {
     name: "Aspire R6V",
-    baseHours: 3,
+    baseHours: 2.5,
     fourGType: "small",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "308V",
-    baseHours: 3,
+    baseHours: 2.5,
     fourGType: "small",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "312V",
-    baseHours: 3,
+    baseHours: 2.5,
     fourGType: "small",
     rs1Allowed: true,
     cableAllowed: false,
@@ -68,28 +68,28 @@ const MODEL_CONFIGS: ModelConfig[] = [
 
   {
     name: "305E NERA",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "small",
     rs1Allowed: true,
     cableAllowed: true,
   },
   {
     name: "310E NERA",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "small",
     rs1Allowed: true,
     cableAllowed: true,
   },
   {
     name: "320 NERA",
-    baseHours: 4,
+    baseHours: 3.5,
     fourGType: "plugin",
     rs1Allowed: true,
     cableAllowed: true,
   },
   {
     name: "430X NERA",
-    baseHours: 4,
+    baseHours: 3.5,
     fourGType: "plugin",
     rs1Allowed: true,
     cableAllowed: true,
@@ -97,35 +97,35 @@ const MODEL_CONFIGS: ModelConfig[] = [
 
   {
     name: "405VE NERA",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "410VE NERA",
-    baseHours: 3.5,
+    baseHours: 3,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "430V NERA",
-    baseHours: 4,
+    baseHours: 3.5,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "435X AWD NERA",
-    baseHours: 4.5,
+    baseHours: 4,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "450V NERA",
-    baseHours: 4.5,
+    baseHours: 4,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
@@ -133,28 +133,28 @@ const MODEL_CONFIGS: ModelConfig[] = [
 
   {
     name: "520 EPOS",
-    baseHours: 4,
+    baseHours: 3.5,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "535 AWD EPOS",
-    baseHours: 4.5,
+    baseHours: 4,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "560 EPOS",
-    baseHours: 5,
+    baseHours: 4.5,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
   },
   {
     name: "580 EPOS",
-    baseHours: 5,
+    baseHours: 4.5,
     fourGType: "built-in",
     rs1Allowed: true,
     cableAllowed: false,
@@ -263,7 +263,9 @@ export default function KalkulatorPage() {
   const effectiveAddRS1 = rs1Allowed ? addRS1 : false;
 
   const baseHours = modelConfig?.baseHours ?? 0;
-  const extraHours = (effectiveAddFourG ? 1 : 0) + (effectiveAddRS1 ? 1 : 0);
+  const extraHours =
+    (effectiveAddFourG ? 1 : 0) +
+    0;
 
   const totalHours =
     overriddenHours > 0 ? overriddenHours : baseHours + extraHours;
@@ -361,14 +363,8 @@ export default function KalkulatorPage() {
       prefilledModel?.fourGType === "small" ||
       prefilledModel?.fourGType === "plugin";
 
-    const prefilledRs1Allowed = prefilledModel?.rs1Allowed ?? false;
-
     if (wants4GQuery === "yes" && prefilledFourGAllowed) {
       setAddFourG(true);
-    }
-
-    if (boundaryType === "tradlos" && wifi === "no" && prefilledRs1Allowed) {
-      setAddRS1(true);
     }
   }, []);
 
@@ -828,7 +824,7 @@ export default function KalkulatorPage() {
                     !modelConfig
                       ? "Velg modell først"
                       : rs1Allowed
-                        ? "Legger til produktpris + 1 time jobb"
+                        ? "Legger kun til produktpris"
                         : "Ikke aktuelt for denne modellen"
                   }
                 />
@@ -927,12 +923,10 @@ export default function KalkulatorPage() {
                 <p>Timepris: {formatCurrency(HOURLY_RATE)} / t</p>
                 <p>Kabel: {formatCurrency(CABLE_PRICE)} / m</p>
                 <p>
-                  4G småmodeller: {formatCurrency(FOUR_G_SMALL_PRICE)} + 1 t
+                  4G småmodeller / plugin: {formatCurrency(FOUR_G_SMALL_PRICE)} /
+                  {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t der det ikke er standard
                 </p>
-                <p>
-                  Plugin 320/430X NERA: {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t
-                </p>
-                <p>RS1: {formatCurrency(RS1_PRICE)} + 1 t</p>
+                <p>RS1: {formatCurrency(RS1_PRICE)} uten ekstra tid</p>
               </div>
             </div>
           </div>
