@@ -214,7 +214,9 @@ function toCalculatorModelName(fullName: string) {
 }
 
 function fromCalculatorModelName(name: string) {
-  return models.find((model) => toCalculatorModelName(model.name) === name) ?? null;
+  return (
+    models.find((model) => toCalculatorModelName(model.name) === name) ?? null
+  );
 }
 
 function getSuggestedCalculatorNames(ids: string[]) {
@@ -224,8 +226,11 @@ function getSuggestedCalculatorNames(ids: string[]) {
   ids.forEach((id) => {
     const model = models.find((item) => item.id === id);
     if (!model) return;
+
     const calculatorName = toCalculatorModelName(model.name);
+
     if (seen.has(calculatorName)) return;
+
     seen.add(calculatorName);
     result.push(calculatorName);
   });
@@ -303,6 +308,7 @@ export default function KalkulatorPage() {
   const drivingCost = distance
     ? Math.max(BASE_DRIVING_PRICE, distance.km * KM_RATE)
     : 0;
+
   const laborCost = totalHours * HOURLY_RATE;
   const cableCost = cableMetersNumber * CABLE_PRICE;
 
@@ -897,7 +903,7 @@ export default function KalkulatorPage() {
                     !modelConfig
                       ? "Velg modell først"
                       : fourGBuiltIn
-                        ? "4G er standard på denne modellen"
+                        ? "Innebygd – inkludert i klipperpris"
                         : fourGAllowed
                           ? "Legger til produktpris + 1 time jobb"
                           : "Ikke aktuelt for denne modellen"
@@ -934,7 +940,9 @@ export default function KalkulatorPage() {
                 <SummaryRow
                   label="Klipperpris"
                   value={
-                    mowerPrice > 0 ? formatCurrency(mowerPrice) : "Sett pris i data/models.ts"
+                    mowerPrice > 0
+                      ? formatCurrency(mowerPrice)
+                      : "Mangler pris i data/models.ts"
                   }
                 />
               </div>
@@ -1020,7 +1028,7 @@ export default function KalkulatorPage() {
 
             {mowerPrice <= 0 ? (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                Klipperprisen er ikke satt ennå. Fyll inn <span className="font-semibold">mowerPrice</span> i <span className="font-semibold">data/models.ts</span> for å få komplett totalestimat.
+                Klipperprisen mangler fortsatt på valgt modell.
               </div>
             ) : null}
 
