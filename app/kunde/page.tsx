@@ -26,6 +26,41 @@ type GooglePlaceResponse = {
   details?: string;
 };
 
+type DailyHoursOption =
+  | "under-6"
+  | "6-10"
+  | "10-16"
+  | "16-24"
+  | "24-7";
+
+type BoundaryTypeOption = "kabel" | "tradlos" | "";
+
+type SlopeAreaOption =
+  | "under-25"
+  | "25-40"
+  | "40-50"
+  | "50-70"
+  | "unknown";
+
+type SlopeBoundaryOption =
+  | "under-10"
+  | "10-15"
+  | "15-20"
+  | "20-25"
+  | "unknown";
+
+const WEEK_DAYS = [
+  { key: "mon", label: "Man" },
+  { key: "tue", label: "Tir" },
+  { key: "wed", label: "Ons" },
+  { key: "thu", label: "Tor" },
+  { key: "fri", label: "Fre" },
+  { key: "sat", label: "Lør" },
+  { key: "sun", label: "Søn" },
+] as const;
+
+type WeekDayKey = (typeof WEEK_DAYS)[number]["key"];
+
 export default function KundePage() {
   const [started, setStarted] = useState(false);
   const [address, setAddress] = useState("");
@@ -38,6 +73,15 @@ export default function KundePage() {
 
   const [drawnAreaSquareMeters, setDrawnAreaSquareMeters] = useState(0);
   const [drawnPointsCount, setDrawnPointsCount] = useState(0);
+
+  const [dailyHours, setDailyHours] = useState<DailyHoursOption | "">("");
+  const [selectedDays, setSelectedDays] = useState<WeekDayKey[]>([]);
+  const [boundaryType, setBoundaryType] = useState<BoundaryTypeOption>("");
+  const [slopeArea, setSlopeArea] = useState<SlopeAreaOption | "">("");
+  const [slopeBoundary, setSlopeBoundary] = useState<SlopeBoundaryOption | "">("");
+  const [fullWifiCoverage, setFullWifiCoverage] = useState<"yes" | "no" | "unknown" | "">("");
+  const [wants4G, setWants4G] = useState<"yes" | "no" | "unknown" | "">("");
+  const [complexGarden, setComplexGarden] = useState<"yes" | "no" | "unknown" | "">("");
 
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -178,13 +222,35 @@ export default function KundePage() {
     setSelectedCoords(null);
     setDrawnAreaSquareMeters(0);
     setDrawnPointsCount(0);
+    setDailyHours("");
+    setSelectedDays([]);
+    setBoundaryType("");
+    setSlopeArea("");
+    setSlopeBoundary("");
+    setFullWifiCoverage("");
+    setWants4G("");
+    setComplexGarden("");
     setSuggestions([]);
     setShowSuggestions(false);
     setErrorMessage("");
   }
 
+  function toggleDay(day: WeekDayKey) {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((item) => item !== day) : [...prev, day]
+    );
+  }
+
   const hasValidLawnDrawing =
     drawnPointsCount >= 3 && drawnAreaSquareMeters > 0;
+
+  const canContinueToRecommendations =
+    hasValidLawnDrawing &&
+    dailyHours !== "" &&
+    selectedDays.length > 0 &&
+    boundaryType !== "" &&
+    slopeArea !== "" &&
+    slopeBoundary !== "";
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -383,10 +449,167 @@ export default function KundePage() {
                 </div>
               ) : null}
 
+              {hasValidLawnDrawing ? (
+                <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Steg 3
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold sm:text-xl">
+                    Fortell litt om hagen og bruken
+                  </h2>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Dette hjelper oss å foreslå riktige modeller. Hvis du er usikker på helling,
+                    kan du fortsatt velge ukjent og få forslag.
+                  </p>
+
+                  <div className="mt-4 space-y-5">
+                    <Field label="Hvor mange timer per døgn kan klipperen gå?">
+                      <select
+                        value={dailyHours}
+                        onChange={(e) => setDailyHours(e.target.value as DailyHoursOption | "")}
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="under-6">Under 6 timer</option>
+                        <option value="6-10">6–10 timer</option>
+                        <option value="10-16">10–16 timer</option>
+                        <option value="16-24">16–24 timer</option>
+                        <option value="24-7">Hele døgnet / 24-7</option>
+                      </select>
+                    </Field>
+
+                    <div>
+                      <span className="mb-2 block text-sm font-medium text-neutral-700">
+                        Hvilke dager i uka kan klipperen gå?
+                      </span>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                        {WEEK_DAYS.map((day) => {
+                          const selected = selectedDays.includes(day.key);
+
+                          return (
+                            <button
+                              key={day.key}
+                              type="button"
+                              onClick={() => toggleDay(day.key)}
+                              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                selected
+                                  ? "border-neutral-900 bg-neutral-900 text-white"
+                                  : "border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50"
+                              }`}
+                            >
+                              {day.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <Field label="Ønsker du kabel eller kabel-fri løsning?">
+                      <select
+                        value={boundaryType}
+                        onChange={(e) => setBoundaryType(e.target.value as BoundaryTypeOption)}
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="kabel">Kabel</option>
+                        <option value="tradlos">Kabel-fri / trådløs</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Bratteste punkt i klippeområdet">
+                      <select
+                        value={slopeArea}
+                        onChange={(e) => setSlopeArea(e.target.value as SlopeAreaOption | "")}
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="under-25">Under 25 %</option>
+                        <option value="25-40">25–40 %</option>
+                        <option value="40-50">40–50 %</option>
+                        <option value="50-70">50–70 %</option>
+                        <option value="unknown">Vet ikke</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Bratteste punkt langs kabel / ytterkant">
+                      <select
+                        value={slopeBoundary}
+                        onChange={(e) =>
+                          setSlopeBoundary(e.target.value as SlopeBoundaryOption | "")
+                        }
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="under-10">Under 10 %</option>
+                        <option value="10-15">10–15 %</option>
+                        <option value="15-20">15–20 %</option>
+                        <option value="20-25">20–25 %</option>
+                        <option value="unknown">Vet ikke</option>
+                      </select>
+                    </Field>
+
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
+                      Hvis du er usikker på helling, kan du måle med mobilen ved å bruke en
+                      helningsapp / vater-app. Du kan også velge “vet ikke”, så får du
+                      fortsatt forslag.
+                    </div>
+
+                    <Field label="Har du god WiFi-dekning i hele hagen?">
+                      <select
+                        value={fullWifiCoverage}
+                        onChange={(e) =>
+                          setFullWifiCoverage(
+                            e.target.value as "yes" | "no" | "unknown" | ""
+                          )
+                        }
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="yes">Ja</option>
+                        <option value="no">Nei</option>
+                        <option value="unknown">Usikker</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Ønsker du 4G?">
+                      <select
+                        value={wants4G}
+                        onChange={(e) =>
+                          setWants4G(e.target.value as "yes" | "no" | "unknown" | "")
+                        }
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="yes">Ja</option>
+                        <option value="no">Nei</option>
+                        <option value="unknown">Usikker</option>
+                      </select>
+                    </Field>
+
+                    <Field label="Har hagen smale passasjer eller er den komplisert?">
+                      <select
+                        value={complexGarden}
+                        onChange={(e) =>
+                          setComplexGarden(
+                            e.target.value as "yes" | "no" | "unknown" | ""
+                          )
+                        }
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                      >
+                        <option value="">Velg</option>
+                        <option value="yes">Ja</option>
+                        <option value="no">Nei</option>
+                        <option value="unknown">Usikker</option>
+                      </select>
+                    </Field>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  disabled={!hasValidLawnDrawing}
+                  disabled={!canContinueToRecommendations}
                   className="inline-flex h-12 items-center justify-center rounded-2xl bg-neutral-900 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Videre
@@ -414,5 +637,20 @@ function InfoCard({ title, text }: { title: string; text: string }) {
       <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
     </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-medium text-neutral-700">{label}</span>
+      {children}
+    </label>
   );
 }
