@@ -70,9 +70,10 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 export default function KundeMap({ latitude, longitude }: KundeMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const addressMarkerRef = useRef<any>(null);
   const polygonRef = useRef<any>(null);
   const clickListenerRef = useRef<any>(null);
+  const pointMarkersRef = useRef<any[]>([]);
 
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -112,15 +113,18 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           clickListenerRef.current = null;
         }
 
-        if (markerRef.current) {
-          markerRef.current.setMap(null);
-          markerRef.current = null;
+        if (addressMarkerRef.current) {
+          addressMarkerRef.current.setMap(null);
+          addressMarkerRef.current = null;
         }
 
         if (polygonRef.current) {
           polygonRef.current.setMap(null);
           polygonRef.current = null;
         }
+
+        pointMarkersRef.current.forEach((marker) => marker.setMap(null));
+        pointMarkersRef.current = [];
 
         const map = new googleWindow.google.maps.Map(mapRef.current, {
           center,
@@ -134,16 +138,24 @@ export default function KundeMap({ latitude, longitude }: KundeMapProps) {
           clickableIcons: false,
           gestureHandling: "greedy",
           disableDoubleClickZoom: false,
-draggableCursor: "crosshair",
-draggingCursor: "move",
+          draggableCursor: "crosshair",
+          draggingCursor: "move",
         });
 
         mapInstanceRef.current = map;
 
-        markerRef.current = new googleWindow.google.maps.Marker({
+        addressMarkerRef.current = new googleWindow.google.maps.Marker({
           position: center,
           map,
           title: "Valgt adresse",
+          icon: {
+            path: googleWindow.google.maps.SymbolPath.CIRCLE,
+            scale: 5,
+            fillColor: "#ef4444",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
         });
 
         polygonRef.current = new googleWindow.google.maps.Polygon({
@@ -152,7 +164,7 @@ draggingCursor: "move",
           strokeOpacity: 1,
           strokeWeight: 2,
           fillColor: "#2563eb",
-          fillOpacity: 0.2,
+          fillOpacity: 0.18,
           editable: false,
           draggable: false,
           clickable: false,
@@ -195,15 +207,18 @@ draggingCursor: "move",
         clickListenerRef.current = null;
       }
 
-      if (markerRef.current) {
-        markerRef.current.setMap(null);
-        markerRef.current = null;
+      if (addressMarkerRef.current) {
+        addressMarkerRef.current.setMap(null);
+        addressMarkerRef.current = null;
       }
 
       if (polygonRef.current) {
         polygonRef.current.setMap(null);
         polygonRef.current = null;
       }
+
+      pointMarkersRef.current.forEach((marker) => marker.setMap(null));
+      pointMarkersRef.current = [];
 
       mapInstanceRef.current = null;
     };
@@ -212,9 +227,49 @@ draggingCursor: "move",
   useEffect(() => {
     const googleWindow = window as GoogleMapsWindow;
 
-    if (!googleWindow.google?.maps || !polygonRef.current) return;
+    if (!googleWindow.google?.maps || !polygonRef.current || !mapInstanceRef.current) {
+      return;
+    }
 
     polygonRef.current.setPath(points);
+
+    pointMarkersRef.current.forEach((marker) => marker.setMap(null));
+    pointMarkersRef.current = [];
+
+    pointMarkersRef.current = points.map((point, index) => {
+      const marker = new googleWindow.google.maps.Marker({
+        position: point,
+        map: mapInstanceRef.current,
+        title: `Punkt ${index + 1}`,
+        draggable: true,
+        icon: {
+          path: googleWindow.google.maps.SymbolPath.CIRCLE,
+          scale: 6,
+          fillColor: "#2563eb",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+        zIndex: 10,
+      });
+
+      marker.addListener("dragend", (event: any) => {
+        if (!event?.latLng) return;
+
+        setPoints((prev) =>
+          prev.map((prevPoint, prevIndex) =>
+            prevIndex === index
+              ? {
+                  lat: event.latLng.lat(),
+                  lng: event.latLng.lng(),
+                }
+              : prevPoint
+          )
+        );
+      });
+
+      return marker;
+    });
 
     if (points.length >= 3) {
       const polygonArea =
@@ -296,9 +351,9 @@ draggingCursor: "move",
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
-        Dra med én finger eller mus for å flytte kartet. Zoom med hjul eller knapper.
-        Klikk deretter rundt plenområdet for å markere hjørnene. Når du har minst 3
-        punkter, regner systemet automatisk ut arealet.
+        Dra med mus eller finger for å flytte kartet. Zoom med hjul eller knapper.
+        Klikk rundt plenområdet for å sette punkter. Punktene vises som blå prikker
+        og kan flyttes etterpå ved å dra dem.
       </div>
     </div>
   );
