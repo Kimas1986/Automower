@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { models, type Model } from "@/data/models";
+import { models } from "@/data/models";
 
 const BASE_ADDRESS = "Joakim Brevolds Allé 4, 7170 Åfjord";
 
@@ -12,6 +12,7 @@ const CABLE_PRICE = 12;
 
 const FOUR_G_SMALL_PRICE = 2990;
 const FOUR_G_PLUGIN_PRICE = 5399;
+const FOUR_G_INSTALL_PRICE = 500;
 const RS1_PRICE = 3799;
 
 type ModelConfig = {
@@ -23,143 +24,29 @@ type ModelConfig = {
 };
 
 const MODEL_CONFIGS: ModelConfig[] = [
-  {
-    name: "Aspire R4",
-    baseHours: 3,
-    fourGType: "none",
-    rs1Allowed: false,
-    cableAllowed: true,
-  },
-  {
-    name: "305",
-    baseHours: 3,
-    fourGType: "small",
-    rs1Allowed: false,
-    cableAllowed: true,
-  },
-  {
-    name: "315 Mk II",
-    baseHours: 3.5,
-    fourGType: "small",
-    rs1Allowed: false,
-    cableAllowed: true,
-  },
+  { name: "Aspire R4", baseHours: 3, fourGType: "none", rs1Allowed: false, cableAllowed: true },
+  { name: "305", baseHours: 3, fourGType: "small", rs1Allowed: false, cableAllowed: true },
+  { name: "315 Mk II", baseHours: 3.5, fourGType: "small", rs1Allowed: false, cableAllowed: true },
 
-  {
-    name: "Aspire R6V",
-    baseHours: 2.5,
-    fourGType: "small",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "308V",
-    baseHours: 2.5,
-    fourGType: "small",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "312V",
-    baseHours: 2.5,
-    fourGType: "small",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
+  { name: "Aspire R6V", baseHours: 2.5, fourGType: "small", rs1Allowed: true, cableAllowed: false },
+  { name: "308V", baseHours: 2.5, fourGType: "small", rs1Allowed: true, cableAllowed: false },
+  { name: "312V", baseHours: 2.5, fourGType: "small", rs1Allowed: true, cableAllowed: false },
 
-  {
-    name: "305E NERA",
-    baseHours: 3,
-    fourGType: "small",
-    rs1Allowed: true,
-    cableAllowed: true,
-  },
-  {
-    name: "310E NERA",
-    baseHours: 3,
-    fourGType: "small",
-    rs1Allowed: true,
-    cableAllowed: true,
-  },
-  {
-    name: "320 NERA",
-    baseHours: 3.5,
-    fourGType: "plugin",
-    rs1Allowed: true,
-    cableAllowed: true,
-  },
-  {
-    name: "430X NERA",
-    baseHours: 3.5,
-    fourGType: "plugin",
-    rs1Allowed: true,
-    cableAllowed: true,
-  },
+  { name: "305E NERA", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: true },
+  { name: "310E NERA", baseHours: 3, fourGType: "small", rs1Allowed: true, cableAllowed: true },
+  { name: "320 NERA", baseHours: 3.5, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
+  { name: "430X NERA", baseHours: 3.5, fourGType: "plugin", rs1Allowed: true, cableAllowed: true },
 
-  {
-    name: "405VE NERA",
-    baseHours: 3,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "410VE NERA",
-    baseHours: 3,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "430V NERA",
-    baseHours: 3.5,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "435X AWD NERA",
-    baseHours: 4,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "450V NERA",
-    baseHours: 4,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
+  { name: "405VE NERA", baseHours: 3, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "410VE NERA", baseHours: 3, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "430V NERA", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "435X AWD NERA", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "450V NERA", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
 
-  {
-    name: "520 EPOS",
-    baseHours: 3.5,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "535 AWD EPOS",
-    baseHours: 4,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "560 EPOS",
-    baseHours: 4.5,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
-  {
-    name: "580 EPOS",
-    baseHours: 4.5,
-    fourGType: "built-in",
-    rs1Allowed: true,
-    cableAllowed: false,
-  },
+  { name: "520 EPOS", baseHours: 3.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "535 AWD EPOS", baseHours: 4, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "560 EPOS", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
+  { name: "580 EPOS", baseHours: 4.5, fourGType: "built-in", rs1Allowed: true, cableAllowed: false },
 ];
 
 type DistanceResult = {
@@ -300,7 +187,7 @@ export default function KalkulatorPage() {
   const effectiveAddRS1 = rs1Allowed ? addRS1 : false;
 
   const baseHours = modelConfig?.baseHours ?? 0;
-  const extraHours = effectiveAddFourG ? 1 : 0;
+  const extraHours = 0;
 
   const totalHours =
     overriddenHours > 0 ? overriddenHours : baseHours + extraHours;
@@ -314,9 +201,9 @@ export default function KalkulatorPage() {
 
   const fourGProductCost =
     modelConfig?.fourGType === "small" && effectiveAddFourG
-      ? FOUR_G_SMALL_PRICE
+      ? FOUR_G_SMALL_PRICE + FOUR_G_INSTALL_PRICE
       : modelConfig?.fourGType === "plugin" && effectiveAddFourG
-        ? FOUR_G_PLUGIN_PRICE
+        ? FOUR_G_PLUGIN_PRICE + FOUR_G_INSTALL_PRICE
         : 0;
 
   const rs1ProductCost = effectiveAddRS1 ? RS1_PRICE : 0;
@@ -871,13 +758,7 @@ export default function KalkulatorPage() {
 
               <Field label="Standard monteringstid">
                 <input
-                  value={
-                    modelConfig
-                      ? `${formatHours(baseHours)} t${
-                          extraHours > 0 ? ` + ${extraHours} t ekstrautstyr` : ""
-                        }`
-                      : ""
-                  }
+                  value={modelConfig ? `${formatHours(baseHours)} t` : ""}
                   readOnly
                   placeholder="Velg modell først"
                   className="w-full rounded-2xl border border-neutral-200 bg-neutral-100 px-4 py-3 text-sm text-neutral-700 outline-none"
@@ -905,7 +786,7 @@ export default function KalkulatorPage() {
                       : fourGBuiltIn
                         ? "Innebygd – inkludert i klipperpris"
                         : fourGAllowed
-                          ? "Legger til produktpris + 1 time jobb"
+                          ? "Legger til produktpris + 500 kr montering"
                           : "Ikke aktuelt for denne modellen"
                   }
                 />
@@ -1044,8 +925,9 @@ export default function KalkulatorPage() {
                 <p>Kabel: {formatCurrency(CABLE_PRICE)} / m</p>
                 <p>
                   4G småmodeller / plugin: {formatCurrency(FOUR_G_SMALL_PRICE)} /{" "}
-                  {formatCurrency(FOUR_G_PLUGIN_PRICE)} + 1 t der det ikke er
-                  standard
+                  {formatCurrency(FOUR_G_PLUGIN_PRICE)} +{" "}
+                  {formatCurrency(FOUR_G_INSTALL_PRICE)} montering der det ikke
+                  er standard
                 </p>
                 <p>RS1: {formatCurrency(RS1_PRICE)} uten ekstra tid</p>
               </div>
